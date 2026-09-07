@@ -11,7 +11,9 @@ services:
     environment:
       - PORT=4477
       - NODE_ENV=production
-      # Optional: Uncomment to configure credentials directly via environment variables
+      - AUTH_USER=admin
+      - AUTH_PASSWORD=fantasy
+      # Optional: Uncomment to configure ESPN credentials directly via environment variables
       # - ESPN_SEASON=2026
       # - ESPN_LEAGUE_ID=1541192778
       # - ESPN_SWID={YOUR-SWID-COOKIE}

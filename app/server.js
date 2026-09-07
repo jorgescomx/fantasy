@@ -93,6 +93,45 @@ function getFormulaConfig() {
 }
 
 app.use(express.json());
+
+// Health check endpoint for Docker / reverse proxy monitoring
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+// --- HTTP Basic Authentication Middleware ---
+const AUTH_ENABLED = process.env.AUTH_ENABLED !== 'false';
+const AUTH_USER = process.env.AUTH_USER || config.auth?.user || 'admin';
+const AUTH_PASSWORD = process.env.AUTH_PASSWORD || config.auth?.password || 'fantasy';
+
+app.use((req, res, next) => {
+  if (req.path === '/health') return next();
+  if (!AUTH_ENABLED) return next();
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Fantasy Football Projection Lab"');
+    return res.status(401).send('Authentication required');
+  }
+
+  const credentials = Buffer.from(authHeader.split(' ')[1], 'base64').toString('utf8');
+  const colonIdx = credentials.indexOf(':');
+  if (colonIdx === -1) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Fantasy Football Projection Lab"');
+    return res.status(401).send('Invalid credentials format');
+  }
+
+  const user = credentials.substring(0, colonIdx);
+  const pass = credentials.substring(colonIdx + 1);
+
+  if (user === AUTH_USER && pass === AUTH_PASSWORD) {
+    return next();
+  }
+
+  res.setHeader('WWW-Authenticate', 'Basic realm="Fantasy Football Projection Lab"');
+  return res.status(401).send('Access denied: Invalid username or password');
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // --- Sleeper: cache the ~14MB player dictionary in memory, refresh daily ---
