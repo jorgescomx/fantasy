@@ -1,0 +1,35 @@
+{
+  "scoring": {
+    "receptions": 1,
+    "recYardsPerPt": 10,
+    "rushYardsPerPt": 10,
+    "passYardsPerPt": 25,
+    "passTD": 4,
+    "rushTD": 6,
+    "recTD": 6,
+    "twoPt": 2,
+    "fumbleLost": -2,
+    "interception": -2,
+    "fractionalYardage": true
+  },
+  "tuning": {
+    "enableMatchupAdjustments": true,
+    "enableInjuryRiskDiscount": true,
+    "enablePaceModifier": true,
+    "enableExpectedTDScaling": true,
+    "enableGameScript": true,
+    "enableBayesianShrinkage": true,
+    "enablePlayerMomentum": true,
+    "useKalshiMarketData": true,
+    "useKalshiPassingYards": true,
+    "useKalshiReceivingYards": true,
+    "useKalshiRushingYards": true,
+    "kalshiWeight": 0.4,
+    "matchupIntensity": 1,
+    "tdConversionScale": 1,
+    "gameScriptWeight": 1,
+    "shrinkageK": 40,
+    "paceModifier": 1
+  },
+  "updatedAt": "2026-09-06T23:43:57.912Z"
+}

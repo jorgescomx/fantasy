@@ -1,0 +1,12 @@
+{
+  "name": "fantasy-data-explorer",
+  "version": "1.0.0",
+  "description": "Local app to query free NFL fantasy data sources (Sleeper, ESPN, nflverse)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

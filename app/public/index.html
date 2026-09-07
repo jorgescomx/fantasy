@@ -1,0 +1,2895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fantasy Football Projections & Weekly Matchups Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #0a0e17;
+      --bg-card: rgba(18, 24, 38, 0.85);
+      --bg-card-hover: rgba(28, 36, 56, 0.95);
+      --bg-subtle: #121826;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-active: rgba(99, 102, 241, 0.4);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-primary: #6366f1;
+      --accent-primary-hover: #4f46e5;
+      --accent-emerald: #10b981;
+      --accent-emerald-bg: rgba(16, 185, 129, 0.15);
+      --accent-rose: #f43f5e;
+      --accent-rose-bg: rgba(244, 63, 94, 0.15);
+      --accent-amber: #f59e0b;
+      --accent-amber-bg: rgba(245, 158, 11, 0.15);
+      --accent-cyan: #06b6d4;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      --font-display: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      line-height: 1.5;
+      background-image: 
+        radial-gradient(at 15% 15%, rgba(99, 102, 241, 0.12) 0px, transparent 45%),
+        radial-gradient(at 85% 85%, rgba(16, 185, 129, 0.08) 0px, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    /* Container */
+    .app-container {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 4rem;
+    }
+
+    /* Top Bar */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .logo-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent-primary), #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+    }
+    .brand-titles h1 {
+      font-family: var(--font-display);
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .brand-titles p {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .week-picker {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.35rem 0.75rem;
+    }
+    .week-picker label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .week-picker select {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+    }
+    .week-picker select option {
+      background: #1e293b;
+      color: #fff;
+    }
+
+    /* Tabs Navigation */
+    .tabs-nav {
+      display: flex;
+      gap: 0.5rem;
+      background: var(--bg-subtle);
+      padding: 0.35rem;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      margin-bottom: 2rem;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .tab-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .tab-btn.active {
+      color: #fff;
+      background: var(--accent-primary);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    /* Tab Panes */
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Matchups Carousel / Cards */
+    .matchups-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 2rem;
+    }
+    .matchup-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .matchup-pill:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+    .matchup-pill.active {
+      border-color: var(--accent-primary);
+      background: var(--bg-card-hover);
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.25);
+    }
+    .matchup-pill .team-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.88rem;
+      margin-bottom: 0.3rem;
+    }
+    .matchup-pill .team-row.bold {
+      font-weight: 700;
+    }
+    .matchup-pill .pts-comp {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.82rem;
+    }
+    .matchup-pill .badge-mine {
+      position: absolute;
+      top: -6px;
+      right: 12px;
+      background: var(--accent-primary);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Detailed Matchup Header Banner */
+    .matchup-banner {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem 2rem;
+      margin-bottom: 2rem;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 1.5rem;
+      box-shadow: var(--shadow-card);
+    }
+    @media (max-width: 800px) {
+      .matchup-banner { grid-template-columns: 1fr; text-align: center; }
+    }
+    .banner-team {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .banner-team.home {
+      align-items: flex-end;
+      text-align: right;
+    }
+    @media (max-width: 800px) {
+      .banner-team.home { align-items: center; text-align: center; }
+      .banner-team.away { align-items: center; text-align: center; }
+    }
+    .team-title {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .team-record {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+    .banner-scores {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+    .score-block {
+      display: flex;
+      flex-direction: column;
+    }
+    .score-block .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+    .score-block .value {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 800;
+    }
+    .score-block.model .value {
+      color: var(--accent-cyan);
+    }
+
+    .banner-vs {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 1rem;
+    }
+    .vs-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 800;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+    .insight-pill {
+      margin-top: 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      text-align: center;
+    }
+
+    /* Side-by-side Roster Tables */
+    .roster-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 1050px) {
+      .roster-grid { grid-template-columns: 1fr; }
+    }
+
+    .roster-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+    .roster-card-header {
+      padding: 1rem 1.25rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .roster-card-header h3 {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .roster-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .roster-table th {
+      text-align: left;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .roster-table td {
+      padding: 0.7rem 0.85rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: middle;
+    }
+    .roster-table tr:hover td {
+      background: rgba(255, 255, 255, 0.025);
+      cursor: pointer;
+    }
+
+    .slot-badge {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-sm);
+      background: #1e293b;
+      color: #94a3b8;
+    }
+    .slot-badge.QB { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .slot-badge.RB { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .slot-badge.WR { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .slot-badge.TE { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
+    .slot-badge.FLEX { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+    .slot-badge.DST, .slot-badge[data-slot="D/ST"] { background: rgba(100, 116, 139, 0.25); color: #cbd5e1; }
+    .slot-badge.K { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; }
+
+    .player-cell {
+      display: flex;
+      flex-direction: column;
+    }
+    .player-cell .p-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .player-cell .p-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .tag-inj {
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 0 4px;
+      border-radius: 3px;
+    }
+    .tag-inj.Q { background: var(--accent-amber-bg); color: #fbbf24; }
+    .tag-inj.O, .tag-inj.IR { background: var(--accent-rose-bg); color: #fb7185; }
+
+    .proj-val {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .proj-val.model {
+      color: var(--accent-cyan);
+    }
+    .delta-pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: var(--radius-sm);
+      display: inline-block;
+    }
+    .delta-pill.pos {
+      background: var(--accent-emerald-bg);
+      color: #34d399;
+    }
+    .delta-pill.neg {
+      background: var(--accent-rose-bg);
+      color: #f87171;
+    }
+    .delta-pill.neu {
+      color: var(--text-muted);
+    }
+
+    .bench-toggle {
+      padding: 0.75rem 1.25rem;
+      background: rgba(0, 0, 0, 0.15);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-top: 1px solid var(--border-color);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Formula Lab Styling */
+    .lab-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 900px) {
+      .lab-layout { grid-template-columns: 1fr; }
+    }
+    .lab-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-card);
+    }
+    .lab-card h3 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .lab-card p.subtitle {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .control-info label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      display: block;
+    }
+    .control-info span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .control-input {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .control-input input[type="number"] {
+      width: 5rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      font-family: var(--font-display);
+      font-weight: 700;
+      padding: 0.4rem 0.5rem;
+      border-radius: var(--radius-sm);
+      text-align: right;
+    }
+    .control-input input[type="range"] {
+      width: 7rem;
+      accent-color: var(--accent-primary);
+    }
+    .range-val {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.85rem;
+      width: 3rem;
+      text-align: right;
+      color: var(--accent-cyan);
+    }
+
+    .lab-actions {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+    }
+    .btn {
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: var(--accent-primary);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+    .btn-primary:hover {
+      background: var(--accent-primary-hover);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    /* Modal for Player Deep Dive */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-card {
+      background: #131b2e;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 580px;
+      padding: 1.75rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+      animation: modalSlide 0.2s ease;
+    }
+    @keyframes modalSlide {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.25rem;
+    }
+    .modal-header h2 {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .stat-boxes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .stat-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.65rem 0.85rem;
+      text-align: center;
+    }
+    .stat-box .title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+    .stat-box .num {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin-top: 0.2rem;
+    }
+
+    .range-bar-container {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .range-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      margin-bottom: 0.4rem;
+    }
+    .range-bar {
+      height: 10px;
+      border-radius: 5px;
+      background: linear-gradient(90deg, #f43f5e 0%, #6366f1 50%, #10b981 100%);
+      position: relative;
+    }
+
+    .rationale-list {
+      list-style: none;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+    .rationale-list li {
+      margin-bottom: 0.35rem;
+      display: flex;
+      gap: 0.4rem;
+    }
+    .rationale-list li::before {
+      content: "•";
+      color: var(--accent-primary);
+      font-weight: bold;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #10b981;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      display: none;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease;
+    }
+
+    /* Start / Sit Edge Cards */
+    .edge-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Free Agents & Waiver Advisor Styles */
+    .upgrade-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .upgrade-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+    }
+    .upgrade-card.starter {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, rgba(18, 24, 38, 0.95) 100%);
+    }
+    .upgrade-card.starter::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #10b981, #06b6d4);
+    }
+    .upgrade-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.85rem;
+    }
+    .upgrade-type-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.2rem 0.6rem;
+      border-radius: var(--radius-sm);
+    }
+    .upgrade-type-badge.starter {
+      background: var(--accent-emerald-bg);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .upgrade-type-badge.bench {
+      background: rgba(99, 102, 241, 0.15);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    .upgrade-vs-box {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-md);
+      padding: 0.85rem;
+      margin-bottom: 0.75rem;
+    }
+    .upgrade-player {
+      display: flex;
+      flex-direction: column;
+    }
+    .upgrade-player .tag {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    .upgrade-player .name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+    }
+    .upgrade-player .score {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.15rem;
+      margin-top: 0.15rem;
+    }
+    .upgrade-player .score.model {
+      color: var(--accent-cyan);
+    }
+    .upgrade-vs-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .edge-badge {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.88rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 20px;
+      background: var(--accent-emerald-bg);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      white-space: nowrap;
+    }
+    .radar-tier {
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .radar-tier.tier1 {
+      background: var(--accent-emerald-bg);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .radar-tier.tier2 {
+      background: rgba(6, 182, 212, 0.15);
+      color: #22d3ee;
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+    .radar-tier.tier3 {
+      background: var(--accent-amber-bg);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .pos-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .pos-btn {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.35rem 0.85rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .pos-btn:hover {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .pos-btn.active {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: #fff;
+    }
+
+    /* Kalshi Toggle Switch & Badges */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #334155;
+      transition: .25s;
+      border-radius: 26px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .25s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
+    }
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+    .kalshi-pill {
+      font-family: var(--font-display);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      background: rgba(6, 182, 212, 0.15);
+      color: #22d3ee;
+      border: 1px solid rgba(6, 182, 212, 0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      vertical-align: middle;
+    }
+    .surge-badge {
+      font-family: var(--font-display);
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      vertical-align: middle;
+    }
+    .fade-badge {
+      font-family: var(--font-display);
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      vertical-align: middle;
+    }
+    @keyframes spin-anim {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .spinning {
+      animation: spin-anim 0.75s linear infinite;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Header -->
+  <header>
+    <div class="brand-group">
+      <div class="logo-badge">⚡</div>
+      <div class="brand-titles">
+        <h1 id="league-title">Fantasy Projection Lab</h1>
+        <p id="league-meta">2026 Season • Side-by-Side ESPN vs Model Engine</p>
+      </div>
+    </div>
+    <div class="header-controls" style="display:flex; align-items:center; gap:0.75rem;">
+      <div style="display:flex; align-items:center; gap:0.55rem;">
+        <span id="last-updated-time" style="font-size:0.75rem; color:var(--text-muted); font-family:var(--font-display);">Live: Ready</span>
+        <button id="btn-global-refresh" class="btn btn-secondary" onclick="triggerGlobalRefresh()" style="padding:0.42rem 0.85rem; font-size:0.8rem; display:flex; align-items:center; gap:0.45rem; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); cursor:pointer;" title="Bypasses cache and pulls real-time updates from ESPN and Kalshi">
+          <span id="refresh-icon" style="display:inline-block;">🔄</span> Refresh Live Data
+        </button>
+      </div>
+      <div class="week-picker">
+        <label for="week-select">Week</label>
+        <select id="week-select" onchange="onWeekChange()">
+          <!-- Populated dynamically 1-18 -->
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="tabs-nav">
+    <button class="tab-btn active" onclick="switchTab('matchups', this)">
+      <span>⚔️</span> Weekly Matchups
+    </button>
+    <button class="tab-btn" onclick="switchTab('advisor', this)">
+      <span>🎯</span> Start / Sit Advisor
+    </button>
+    <button class="tab-btn" onclick="switchTab('lab', this)">
+      <span>🧪</span> Weekly Formula & Settings
+    </button>
+    <button class="tab-btn" onclick="switchTab('waiver', this)">
+      <span>🔥</span> Free Agents & Waivers
+    </button>
+    <button class="tab-btn" onclick="switchTab('learnings', this)">
+      <span>🧠</span> Post-Week Learnings
+    </button>
+  </nav>
+
+  <!-- TAB 1: WEEKLY MATCHUPS -->
+  <div id="tab-matchups" class="tab-pane active">
+    <!-- Matchups Carousel / Selector -->
+    <div id="matchups-carousel" class="matchups-bar">
+      <!-- Populated dynamically -->
+    </div>
+
+    <!-- Selected Matchup Banner -->
+    <div id="matchup-banner" class="matchup-banner">
+      <!-- Populated dynamically -->
+    </div>
+
+    <!-- Side-by-Side Starters & Bench -->
+    <div id="rosters-container" class="roster-grid">
+      <!-- Left (Away) & Right (Home) populated dynamically -->
+    </div>
+  </div>
+
+  <!-- TAB 2: START / SIT ADVISOR -->
+  <div id="tab-advisor" class="tab-pane">
+    <!-- Header with Scope and Team Selector -->
+    <div class="lab-card" style="margin-bottom: 1.5rem; background: linear-gradient(180deg, rgba(99, 102, 241, 0.05) 0%, rgba(15, 23, 42, 0.8) 100%); border-color: rgba(99, 102, 241, 0.25);">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <div>
+          <h3 style="font-size:1.3rem; margin-bottom:0.25rem;">🎯 Start / Sit Lineup Advisor</h3>
+          <p class="subtitle" style="margin-bottom:0;">
+            Compare your starters against your bench to find lineup upgrades and pinpoint high-variance model edges.
+          </p>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.5rem; background:rgba(0,0,0,0.3); padding:0.3rem 0.4rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+          <button id="advisor-scope-my" class="btn btn-secondary active" onclick="setAdvisorScope('my', this)" style="padding:0.35rem 0.75rem; font-size:0.8rem;">
+            🎯 My Team (<span id="advisor-myteam-name">Good2Dream</span>)
+          </button>
+          <button id="advisor-scope-all" class="btn btn-secondary" onclick="setAdvisorScope('all', this)" style="padding:0.35rem 0.75rem; font-size:0.8rem;">
+            🌐 All League Teams
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 1: Bench vs Starter Swap Recommendations -->
+    <div id="advisor-swaps-box" class="lab-card" style="margin-bottom: 1.5rem; border-color: rgba(16, 185, 129, 0.3);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <div>
+          <h4 style="font-size:1.05rem; display:flex; align-items:center; gap:0.4rem; margin-bottom:0.2rem;">
+            <span>🔄</span> Lineup Swap Recommendations
+          </h4>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0;">
+            Bench players who outproject your currently active starters in the same slot or FLEX.
+          </p>
+        </div>
+      </div>
+      <div id="advisor-swaps-list">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+
+    <!-- Section 2: Model Variance & Start/Sit Edges -->
+    <div class="lab-card" style="margin-bottom: 1.5rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.75rem;">
+        <div>
+          <h4 style="font-size:1.05rem; display:flex; align-items:center; gap:0.4rem; margin-bottom:0.2rem;">
+            <span>⚡</span> Model Divergence & Risk/Reward Edges
+          </h4>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0;">
+            Players where our 6-stage model sees significant upside or bust risk compared to ESPN.
+          </p>
+        </div>
+        <div class="pos-filters" style="margin:0;">
+          <button class="pos-btn active" data-pos="ALL" onclick="filterAdvisorPos('ALL', this)">ALL</button>
+          <button class="pos-btn" data-pos="OFFENSE" onclick="filterAdvisorPos('OFFENSE', this)">OFFENSE</button>
+          <button class="pos-btn" data-pos="QB" onclick="filterAdvisorPos('QB', this)">QB</button>
+          <button class="pos-btn" data-pos="RB" onclick="filterAdvisorPos('RB', this)">RB</button>
+          <button class="pos-btn" data-pos="WR" onclick="filterAdvisorPos('WR', this)">WR</button>
+          <button class="pos-btn" data-pos="TE" onclick="filterAdvisorPos('TE', this)">TE</button>
+          <button class="pos-btn" data-pos="D/ST" onclick="filterAdvisorPos('D/ST', this)">D/ST</button>
+        </div>
+      </div>
+      <div id="advisor-edges-list">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: WEEKLY FORMULA LAB -->
+  <div id="tab-lab" class="tab-pane">
+    <div class="lab-layout">
+      <!-- Analytical Model Factor Toggles Matrix -->
+      <div class="lab-card" style="grid-column: 1 / -1; border-color: rgba(99, 102, 241, 0.3); background: linear-gradient(180deg, rgba(99, 102, 241, 0.04) 0%, rgba(15, 23, 42, 0.85) 100%);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.25rem; gap:1rem; flex-wrap:wrap;">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <h3 style="font-size:1.15rem; margin-bottom:0;">🎛️ Analytical Model Factor Toggles</h3>
+              <span class="kalshi-pill" style="background:rgba(99,102,241,0.15); color:#a5b4fc; border-color:rgba(99,102,241,0.3);">MODULAR ENGINE</span>
+            </div>
+            <p class="subtitle" style="max-width:760px; margin-top:0.35rem;">
+              Enable or disable individual analytical layers in our 6-stage projection engine. Disabling a factor isolates projections to test "what-if" scenarios (e.g., toggle off injury risk to see full healthy ceiling).
+            </p>
+          </div>
+          <button class="btn btn-secondary" style="font-size:0.78rem; padding:0.35rem 0.85rem;" onclick="resetAllFactorToggles()">Enable All Factors</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:0.85rem;">
+          <!-- Factor 1: Matchup EPA -->
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700; font-size:0.88rem; display:flex; align-items:center; gap:0.4rem;">
+                <span>🛡️</span> Opponent Defensive Matchups
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">EPA / DVOA strength multipliers</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-factor-matchup" onchange="saveFormulaConfig()" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Factor 2: Injury Risk Discount -->
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700; font-size:0.88rem; display:flex; align-items:center; gap:0.4rem;">
+                <span>🏥</span> Injury Risk Haircut
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">-8% Q / -60% Doubtful discount</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-factor-injury" onchange="saveFormulaConfig()" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Factor 3: Game Pace / Tempo -->
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700; font-size:0.88rem; display:flex; align-items:center; gap:0.4rem;">
+                <span>⏱️</span> Game Pace & Tempo
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">Total offensive play volume scale</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-factor-pace" onchange="saveFormulaConfig()" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Factor 4: Expected TDs -->
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700; font-size:0.88rem; display:flex; align-items:center; gap:0.4rem;">
+                <span>🎯</span> Expected TD (xTD) Scaling
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">Red-zone volume conversion</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-factor-xtd" onchange="saveFormulaConfig()" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Factor 5: Game Script -->
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700; font-size:0.88rem; display:flex; align-items:center; gap:0.4rem;">
+                <span>📜</span> Vegas Game Script Split
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">Spread-based run vs pass volume</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-factor-script" onchange="saveFormulaConfig()" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Factor 6: Bayesian Shrinkage -->
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700; font-size:0.88rem; display:flex; align-items:center; gap:0.4rem;">
+                <span>⚖️</span> Bayesian Role Shrinkage
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">Position baseline regression</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-factor-shrink" onchange="saveFormulaConfig()" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Factor 7: Player Momentum / Form Factor -->
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700; font-size:0.88rem; display:flex; align-items:center; gap:0.4rem;">
+                <span>🔥</span> Player Momentum / Form
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">Learned role surge & fade multiplier</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-factor-momentum" onchange="saveFormulaConfig()" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scoring Rules -->
+      <div class="lab-card">
+        <h3>League Scoring Weights</h3>
+        <p class="subtitle">Direct weights applied during the Stage 6 dot-product scoring engine.</p>
+
+        <div class="control-row">
+          <div class="control-info">
+            <label>Receptions (PPR)</label>
+            <span>Points awarded per catch (1.0 = Full, 0.5 = Half)</span>
+          </div>
+          <div class="control-input">
+            <input id="score-rec" type="number" step="0.25" min="0" max="2">
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-info">
+            <label>Receiving Yards per Point</label>
+            <span>Standard is 10 yards = 1 point</span>
+          </div>
+          <div class="control-input">
+            <input id="score-rec-yd" type="number" step="1" min="5" max="25">
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-info">
+            <label>Rushing Yards per Point</label>
+            <span>Standard is 10 yards = 1 point</span>
+          </div>
+          <div class="control-input">
+            <input id="score-rush-yd" type="number" step="1" min="5" max="25">
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-info">
+            <label>Passing Yards per Point</label>
+            <span>Standard is 25 yards = 1 point</span>
+          </div>
+          <div class="control-input">
+            <input id="score-pass-yd" type="number" step="5" min="10" max="50">
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-info">
+            <label>Touchdown Values</label>
+            <span>Pass TD / Rush-Rec TD</span>
+          </div>
+          <div class="control-input">
+            <input id="score-pass-td" type="number" step="1" min="4" max="6" style="width:3.5rem">
+            <input id="score-td" type="number" step="1" min="4" max="6" style="width:3.5rem">
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-info">
+            <label>Turnovers Lost</label>
+            <span>Interception / Fumble Lost penalty</span>
+          </div>
+          <div class="control-input">
+            <input id="score-turnover" type="number" step="1" max="0" style="width:4.5rem">
+          </div>
+        </div>
+      </div>
+
+      <!-- Model Tuners -->
+      <div class="lab-card">
+        <h3>Weekly Model Coefficients</h3>
+        <p class="subtitle">Parameters controlling how aggressively matchup EPA, Vegas lines, and role regression move projections.</p>
+
+        <div class="control-row">
+          <div class="control-info">
+            <label>Matchup DVOA / EPA Intensity</label>
+            <span>Scales opponent defensive impact (0.5 = conservative, 1.5 = aggressive)</span>
+          </div>
+          <div class="control-input">
+            <input id="tune-matchup" type="range" min="0.5" max="1.8" step="0.05" oninput="updateRangeLabel('tune-matchup-val', this.value)">
+            <span id="tune-matchup-val" class="range-val">1.0x</span>
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-info">
+            <label>Expected TD (xTD) Scale</label>
+            <span>Sensitivity to red-zone touches and goal-line volume</span>
+          </div>
+          <div class="control-input">
+            <input id="tune-td" type="range" min="0.7" max="1.3" step="0.05" oninput="updateRangeLabel('tune-td-val', this.value)">
+            <span id="tune-td-val" class="range-val">1.0x</span>
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-info">
+            <label>Game Script Sensitivity</label>
+            <span>How much Vegas point spreads shift pass vs. run share</span>
+          </div>
+          <div class="control-input">
+            <input id="tune-script" type="range" min="0.5" max="1.5" step="0.05" oninput="updateRangeLabel('tune-script-val', this.value)">
+            <span id="tune-script-val" class="range-val">1.0x</span>
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-info">
+            <label>Bayesian Shrinkage Factor (k)</label>
+            <span>Weight pulling small-sample stats toward position averages</span>
+          </div>
+          <div class="control-input">
+            <input id="tune-shrink" type="range" min="20" max="70" step="5" oninput="updateRangeLabel('tune-shrink-val', this.value)">
+            <span id="tune-shrink-val" class="range-val">40</span>
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-info">
+            <label>Game Pace / Tempo</label>
+            <span>Overall offensive plays multiplier</span>
+          </div>
+          <div class="control-input">
+            <input id="tune-pace" type="range" min="0.9" max="1.1" step="0.02" oninput="updateRangeLabel('tune-pace-val', this.value)">
+            <span id="tune-pace-val" class="range-val">1.0x</span>
+          </div>
+        </div>
+
+        <div class="lab-actions">
+          <button class="btn btn-secondary" onclick="resetFormulaDefaults()">Reset to Defaults</button>
+          <button class="btn btn-primary" onclick="saveFormulaConfig()">Save Weekly Formula</button>
+        </div>
+      </div>
+
+      <!-- Kalshi Prediction Markets -->
+      <div class="lab-card" style="grid-column: 1 / -1; border-color: rgba(6, 182, 212, 0.3); background: linear-gradient(180deg, rgba(6, 182, 212, 0.05) 0%, rgba(15, 23, 42, 0.8) 100%);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.6rem;">
+              <h3 style="margin-bottom:0; font-size:1.15rem;">🏛️ Kalshi Prediction Markets Integration</h3>
+              <span class="kalshi-pill">MULTI-POSITION OPEN API</span>
+            </div>
+            <p class="subtitle" style="margin-top:0.35rem; max-width:720px;">
+              Toggle real-money prediction market consensus into the projection engine. When <strong>Enabled</strong>, Kalshi's passing, receiving, and scrimmage yardage contract ladders blend directly into projections and calibrate floor/ceiling distributions to market strike probabilities. When <strong>Disabled</strong>, the baseline 6-stage model outputs standard statistical values without Kalshi.
+            </p>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.85rem; background:rgba(0,0,0,0.35); padding:0.6rem 1rem; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.08);">
+            <div style="text-align:right;">
+              <div style="font-size:0.7rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Kalshi Market Feed</div>
+              <div id="kalshi-toggle-status" style="font-size:0.85rem; font-weight:800; color:var(--text-muted);">DISABLED (OFF)</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="tune-kalshi-toggle" onchange="onKalshiToggleChange(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div id="kalshi-controls-box" style="opacity: 0.45; pointer-events: none; transition: all 0.25s ease; margin-top: 1.25rem;">
+          <div style="display:flex; flex-direction:column; gap:0.75rem; border-top:1px solid rgba(255,255,255,0.06); padding-top:1rem;">
+            <div style="font-size:0.78rem; font-weight:700; color:var(--accent-cyan); text-transform:uppercase; letter-spacing:0.05em;">
+              Active Kalshi Market Books by Position
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:0.75rem;">
+              <label style="display:flex; align-items:center; gap:0.6rem; background:rgba(0,0,0,0.25); padding:0.6rem 0.85rem; border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.06); cursor:pointer;">
+                <input type="checkbox" id="tune-kalshi-pass" onchange="saveFormulaConfig()" checked>
+                <div>
+                  <div style="font-size:0.85rem; font-weight:700;">🏈 QB Passing Yards</div>
+                  <div style="font-size:0.7rem; color:var(--text-muted);">KXNFLPASSYDS Series</div>
+                </div>
+              </label>
+              <label style="display:flex; align-items:center; gap:0.6rem; background:rgba(0,0,0,0.25); padding:0.6rem 0.85rem; border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.06); cursor:pointer;">
+                <input type="checkbox" id="tune-kalshi-rush" onchange="saveFormulaConfig()" checked>
+                <div>
+                  <div style="font-size:0.85rem; font-weight:700;">🏃 RB Scrimmage Yards</div>
+                  <div style="font-size:0.7rem; color:var(--text-muted);">KXNFLRRYDS (Rush + Rec)</div>
+                </div>
+              </label>
+              <label style="display:flex; align-items:center; gap:0.6rem; background:rgba(0,0,0,0.25); padding:0.6rem 0.85rem; border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.06); cursor:pointer;">
+                <input type="checkbox" id="tune-kalshi-rec" onchange="saveFormulaConfig()" checked>
+                <div>
+                  <div style="font-size:0.85rem; font-weight:700;">🎯 WR / TE Receiving Yards</div>
+                  <div style="font-size:0.7rem; color:var(--text-muted);">KXNFLRECYDS Series</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="control-row" style="margin-top:1rem; border-top:1px solid rgba(255,255,255,0.06); padding-top:1rem;">
+            <div class="control-info">
+              <label>Kalshi Market Blend Weight</label>
+              <span>Weight of Kalshi implied yardage vs. model baseline (10% to 80%)</span>
+            </div>
+            <div class="control-input">
+              <input id="tune-kalshi-weight" type="range" min="0.10" max="0.80" step="0.05" oninput="updateRangeLabel('tune-kalshi-weight-val', Math.round(this.value * 100) + '%')">
+              <span id="tune-kalshi-weight-val" class="range-val">40%</span>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.75rem; margin-top:1rem; padding:0.85rem 1rem; background:rgba(0,0,0,0.25); border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.05);">
+            <div>
+              <div style="font-size:0.7rem; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.05em;">Market Feeds</div>
+              <div style="font-weight:700; font-size:0.88rem; color:#fff; margin-top:2px;">PASSYDS • RECYDS • RRYDS</div>
+            </div>
+            <div>
+              <div style="font-size:0.7rem; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.05em;">Strike Calibration</div>
+              <div style="font-weight:700; font-size:0.88rem; color:#34d399; margin-top:2px;">Riemann Sum & Percentiles</div>
+            </div>
+            <div>
+              <div style="font-size:0.7rem; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.05em;">Auth Requirement</div>
+              <div style="font-weight:700; font-size:0.88rem; color:var(--accent-cyan); margin-top:2px;">Public (No API key needed)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: FREE AGENTS & WAIVER ADVISOR -->
+  <div id="tab-waiver" class="tab-pane">
+    <!-- Section 1: Immediate Roster Upgrades -->
+    <div style="margin-bottom: 2rem;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom: 1rem;">
+        <div>
+          <h2 style="font-family:var(--font-display); font-size:1.35rem; font-weight:700;">⚡ Immediate Roster Upgrades</h2>
+          <p style="font-size:0.85rem; color:var(--text-secondary);">Available Free Agents who project higher than your current starters or bench depth.</p>
+        </div>
+        <button class="btn btn-secondary" style="padding:0.35rem 0.85rem; font-size:0.8rem;" onclick="loadWaiverAdvisor()">🔄 Refresh Free Agents</button>
+      </div>
+      <div id="waiver-upgrades-container" class="upgrade-grid">
+        <p style="color:var(--text-muted); font-size:0.85rem;">Analyzing available free agents against your roster…</p>
+      </div>
+    </div>
+
+    <!-- Section 2: End-of-Week Waiver Priority Radar -->
+    <div class="lab-card" style="margin-bottom: 2rem;">
+      <div style="margin-bottom: 1.25rem;">
+        <h3 style="font-size:1.25rem;">🎯 End-of-Week Waiver Priority Radar</h3>
+        <p class="subtitle">Recommended waiver claims to submit for next week, ranked by model projection, Sleeper trending add velocity, and breakout upside.</p>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th>Priority Tier</th>
+              <th>Player</th>
+              <th>Status</th>
+              <th>Sleeper Trend</th>
+              <th>Ownership</th>
+              <th style="text-align:right;">ESPN Proj</th>
+              <th style="text-align:right;">Model Proj</th>
+              <th style="text-align:right;">Delta</th>
+            </tr>
+          </thead>
+          <tbody id="waiver-radar-tbody">
+            <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:1rem;">Loading waiver priority radar…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Section 3: Full Free Agent Pool Explorer -->
+    <div class="roster-card">
+      <div class="roster-card-header" style="flex-wrap:wrap; gap:0.75rem;">
+        <div>
+          <h3>Available Player Pool</h3>
+          <p style="font-size:0.78rem; color:var(--text-muted);">Browse all unowned players sorted by our 6-stage model projection.</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <input id="fa-search-input" type="text" placeholder="Search player..." style="background:var(--bg-subtle); border:1px solid var(--border-color); color:#fff; font-size:0.85rem; padding:0.35rem 0.75rem; border-radius:var(--radius-sm); outline:none;" oninput="filterFAPool()">
+        </div>
+      </div>
+
+      <div style="padding: 0.85rem 1.25rem 0.25rem;">
+        <div class="pos-filters">
+          <button class="pos-btn active" data-pos="ALL" onclick="filterFAPos('ALL', this)">ALL</button>
+          <button class="pos-btn" data-pos="QB" onclick="filterFAPos('QB', this)">QB</button>
+          <button class="pos-btn" data-pos="RB" onclick="filterFAPos('RB', this)">RB</button>
+          <button class="pos-btn" data-pos="WR" onclick="filterFAPos('WR', this)">WR</button>
+          <button class="pos-btn" data-pos="TE" onclick="filterFAPos('TE', this)">TE</button>
+          <button class="pos-btn" data-pos="K" onclick="filterFAPos('K', this)">K</button>
+          <button class="pos-btn" data-pos="D/ST" onclick="filterFAPos('D/ST', this)">D/ST</button>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th>Pos</th>
+              <th>Player</th>
+              <th>Status</th>
+              <th>Owned %</th>
+              <th style="text-align:right;">ESPN Proj</th>
+              <th style="text-align:right;">Model Proj</th>
+              <th style="text-align:right;">Delta</th>
+            </tr>
+          </thead>
+          <tbody id="fa-pool-tbody">
+            <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:1rem;">Loading available free agents…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: POST-WEEK LEARNINGS & ACCURACY LAB -->
+  <div id="tab-learnings" class="tab-pane">
+    <!-- Header & Action Bar -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; gap:1rem; flex-wrap:wrap;">
+      <div>
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <h2 style="font-family:var(--font-display); font-size:1.35rem; font-weight:700; margin:0;">🧠 Post-Week Learnings & Attribution Lab</h2>
+          <span id="learnings-mode-badge" class="kalshi-pill" style="background:rgba(99,102,241,0.15); color:#a5b4fc; border-color:rgba(99,102,241,0.3);">CALIBRATION READY</span>
+        </div>
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.35rem; max-width:740px;">
+          Backtest model projections against true actuals, evaluate the Alpha relevance of each analytical factor, and identify players with rolling momentum surges or role fades for subsequent weeks.
+        </p>
+      </div>
+      <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+        <button class="btn btn-secondary" style="font-size:0.8rem; padding:0.4rem 0.85rem;" onclick="loadLearningsAnalysis(false)">
+          🔄 Refresh Real Stats
+        </button>
+        <button class="btn btn-primary" style="font-size:0.8rem; padding:0.4rem 0.85rem; background:linear-gradient(135deg, #6366f1, #06b6d4);" onclick="loadLearningsAnalysis(true)">
+          🎮 Run Post-Week Simulation Backtest
+        </button>
+      </div>
+    </div>
+
+    <!-- Section 1: Accuracy Scorecard (Model vs ESPN Head-to-Head) -->
+    <div class="lab-card" style="margin-bottom:1.5rem;">
+      <h3 style="font-size:1.15rem; margin-bottom:0.25rem;">Head-to-Head Accuracy Scorecard</h3>
+      <p class="subtitle">Mean Absolute Error (MAE) and head-to-head prediction win rate for Week <span id="scorecard-week-num">1</span>.</p>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; margin-top:1.25rem;">
+        <!-- Card 1: Model MAE -->
+        <div style="background:rgba(6,182,212,0.06); border:1px solid rgba(6,182,212,0.25); border-radius:var(--radius-md); padding:1rem; text-align:center;">
+          <div style="font-size:0.72rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Our Model MAE</div>
+          <div id="stat-model-mae" style="font-family:var(--font-display); font-size:2.2rem; font-weight:800; color:var(--accent-cyan); margin:0.25rem 0;">-</div>
+          <div id="stat-mae-diff" style="font-size:0.75rem; font-weight:700; color:#34d399;">Lower is better</div>
+        </div>
+
+        <!-- Card 2: ESPN MAE -->
+        <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:1rem; text-align:center;">
+          <div style="font-size:0.72rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">ESPN Baseline MAE</div>
+          <div id="stat-espn-mae" style="font-family:var(--font-display); font-size:2.2rem; font-weight:800; color:var(--text-secondary); margin:0.25rem 0;">-</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">Standard projection error</div>
+        </div>
+
+        <!-- Card 3: Model Win Rate -->
+        <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.25); border-radius:var(--radius-md); padding:1rem; text-align:center;">
+          <div style="font-size:0.72rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Model Win Rate</div>
+          <div id="stat-win-rate" style="font-family:var(--font-display); font-size:2.2rem; font-weight:800; color:#34d399; margin:0.25rem 0;">-</div>
+          <div id="stat-win-counts" style="font-size:0.75rem; color:var(--text-muted);">Predictions closer than ESPN</div>
+        </div>
+
+        <!-- Card 4: Evaluated Sample -->
+        <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:1rem; text-align:center;">
+          <div style="font-size:0.72rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Evaluated Sample</div>
+          <div id="stat-sample-size" style="font-family:var(--font-display); font-size:2.2rem; font-weight:800; color:#fff; margin:0.25rem 0;">-</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">Active roster players</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Factor Relevance & Alpha Attribution Matrix -->
+    <div class="lab-card" style="margin-bottom:1.5rem;">
+      <h3 style="font-size:1.15rem; margin-bottom:0.25rem;">Factor Relevance & Alpha Attribution</h3>
+      <p class="subtitle">Error reduction (Alpha) contributed by each analytical factor when applied against actual outcomes.</p>
+
+      <div id="attribution-matrix-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem; margin-top:1.25rem;">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+
+    <!-- Section 3: Automated Tuning Recommendations -->
+    <div class="lab-card" style="margin-bottom:1.5rem; border-color:rgba(16,185,129,0.3); background:linear-gradient(180deg, rgba(16,185,129,0.04) 0%, rgba(15,23,42,0.85) 100%);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
+        <div>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <span style="font-size:1.2rem;">💡</span>
+            <h3 style="font-size:1.15rem; margin-bottom:0; color:#34d399;">Model Auto-Tuning Recommendations</h3>
+          </div>
+          <p class="subtitle" style="margin-top:0.35rem;">
+            Suggested formula parameter adjustments derived from this week's accuracy and factor performance attribution.
+          </p>
+        </div>
+        <button id="btn-apply-learnings" class="btn btn-primary" style="background:#10b981; font-size:0.8rem; padding:0.45rem 1rem;" onclick="applyLearningsRecommendations()">
+          ⚡ Apply Recommended Settings
+        </button>
+      </div>
+      <ul id="learnings-notes-list" class="rationale-list" style="margin:0;">
+        <li>Loading recommendations…</li>
+      </ul>
+    </div>
+
+    <!-- Section 4: Rolling Player Momentum / Form Radar (Surging vs Fading) -->
+    <div class="roster-card" style="margin-bottom:1.5rem;">
+      <div class="roster-card-header">
+        <div>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <h3>🔥 Player Form & Momentum Radar (Subsequent Weeks)</h3>
+            <span class="kalshi-pill" style="background:rgba(239,68,68,0.15); color:#f87171; border-color:rgba(239,68,68,0.3);">ACTIVE FEEDBACK LOOP</span>
+          </div>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-top:0.2rem;">
+            Identifies players trending significantly higher or lower than expected. Multipliers automatically carry into next week's projections.
+          </p>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th>Status Trend</th>
+              <th>Player</th>
+              <th>Pos / Team</th>
+              <th style="text-align:right;">Projected</th>
+              <th style="text-align:right;">Actual</th>
+              <th style="text-align:right;">Performance Ratio</th>
+              <th style="text-align:right;">Next Week Multiplier</th>
+              <th>Schematic / Role Driver</th>
+            </tr>
+          </thead>
+          <tbody id="momentum-radar-tbody">
+            <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:1rem;">Loading player momentum radar…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Section 5: Notable Model Hits & Misses -->
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+      <!-- Hits -->
+      <div class="roster-card">
+        <div class="roster-card-header" style="border-left: 3px solid #34d399;">
+          <h3 style="color:#34d399;">🎯 Top Model Hits (Outperformed ESPN)</h3>
+        </div>
+        <div id="hits-container" style="padding:1rem;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Misses -->
+      <div class="roster-card">
+        <div class="roster-card-header" style="border-left: 3px solid #f87171;">
+          <h3 style="color:#f87171;">⚠️ High Variance Outliers (To Refine)</h3>
+        </div>
+        <div id="misses-container" style="padding:1rem;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Player Detail Modal -->
+<div id="player-modal" class="modal-overlay" onclick="onModalOverlayClick(event)">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <h2 id="modal-player-name">Player Name</h2>
+        <p id="modal-player-meta" style="font-size:0.85rem; color:var(--text-secondary);">WR • CIN vs TB</p>
+      </div>
+      <button class="close-btn" onclick="closePlayerModal()">×</button>
+    </div>
+
+    <!-- Comparison Big Numbers -->
+    <div style="display:flex; justify-content:space-around; align-items:center; background:rgba(255,255,255,0.03); padding:1rem; border-radius:var(--radius-md); margin-bottom:1.25rem;">
+      <div style="text-align:center;">
+        <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">ESPN Proj</span>
+        <div id="modal-espn-pts" style="font-family:var(--font-display); font-size:1.8rem; font-weight:800;">18.9</div>
+      </div>
+      <div id="modal-delta-badge" class="delta-pill pos" style="font-size:0.95rem; padding:0.35rem 0.75rem;">
+        +3.1 Δ
+      </div>
+      <div style="text-align:center;">
+        <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Our Model Proj</span>
+        <div id="modal-model-pts" style="font-family:var(--font-display); font-size:1.8rem; font-weight:800; color:var(--accent-cyan);">22.0</div>
+      </div>
+    </div>
+
+    <!-- Stat Boxes -->
+    <div class="stat-boxes-grid">
+      <div class="stat-box">
+        <div class="title">Targets / Carries</div>
+        <div id="modal-touches" class="num">10.4 / 0.4</div>
+      </div>
+      <div class="stat-box">
+        <div class="title">Rec / Rush Yds</div>
+        <div id="modal-yards" class="num">96.1 / 1.9</div>
+      </div>
+      <div class="stat-box">
+        <div class="title">Expected TDs</div>
+        <div id="modal-tds" class="num">0.82 xTD</div>
+      </div>
+    </div>
+
+    <!-- Kalshi Prediction Market Consensus (Only displayed if player has active market data) -->
+    <div id="modal-kalshi-box" style="display:none; margin-bottom:1.25rem; padding:0.9rem; background:rgba(6,182,212,0.08); border:1px solid rgba(6,182,212,0.3); border-radius:var(--radius-md);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+        <div style="display:flex; align-items:center; gap:0.45rem;">
+          <span style="font-size:1.1rem;">🏛️</span>
+          <strong id="modal-kalshi-title" style="font-size:0.85rem; color:#22d3ee;">Kalshi Market Consensus</strong>
+        </div>
+        <span id="modal-kalshi-strikes" style="font-size:0.75rem; color:var(--text-muted);">9 strikes traded</span>
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:0.5rem; text-align:center;">
+        <div style="background:rgba(0,0,0,0.35); padding:0.45rem; border-radius:4px;">
+          <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase;">Market Expected</div>
+          <div id="modal-kalshi-expected" style="font-family:var(--font-display); font-weight:700; color:#fff; font-size:0.95rem;">-</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.35); padding:0.45rem; border-radius:4px;">
+          <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase;">Market Median</div>
+          <div id="modal-kalshi-median" style="font-family:var(--font-display); font-weight:700; color:#22d3ee; font-size:0.95rem;">-</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.35); padding:0.45rem; border-radius:4px;">
+          <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase;">Strike Floor/Ceil</div>
+          <div id="modal-kalshi-range" style="font-family:var(--font-display); font-weight:700; color:#34d399; font-size:0.95rem;">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Player Momentum / Form Factor (Only if active) -->
+    <div id="modal-momentum-box" style="display:none; margin-bottom:1.25rem; padding:0.85rem; border-radius:var(--radius-md); background:rgba(255,255,255,0.03); border:1px solid var(--border-color);">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:0.4rem;">
+          <span id="modal-momentum-icon" style="font-size:1.1rem;">🔥</span>
+          <strong id="modal-momentum-title" style="font-size:0.85rem;">Player Momentum Active</strong>
+        </div>
+        <span id="modal-momentum-badge" class="surge-badge">+8% Surge</span>
+      </div>
+      <p id="modal-momentum-desc" style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.35rem; line-height:1.4;">
+        Player outperformed projection over consecutive weeks.
+      </p>
+    </div>
+
+    <!-- Range of Outcomes -->
+    <div class="range-bar-container">
+      <div class="range-labels">
+        <span id="modal-floor">Floor: 12.5</span>
+        <span id="modal-median" style="font-weight:700; color:var(--accent-cyan);">Median: 22.0</span>
+        <span id="modal-ceiling">Ceiling: 36.7</span>
+      </div>
+      <div class="range-bar"></div>
+    </div>
+
+    <!-- Rationale / Stage Breakdown -->
+    <div style="margin-top:1rem;">
+      <h4 style="font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:0.5rem;">6-Stage Model Factors</h4>
+      <ul id="modal-rationale" class="rationale-list">
+        <li>Favorable pass matchup vs secondary (+3% efficiency)</li>
+        <li>High Vegas game total (50.5) boosts red-zone trips to 5.3</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast">Formula saved successfully!</div>
+
+<script>
+let state = {
+  currentWeek: 1,
+  selectedWeek: 1,
+  matchups: [],
+  selectedMatchupIndex: 0,
+  formulaConfig: null,
+  allPlayersList: [],
+  waiverData: null,
+  activeFAPos: 'ALL'
+};
+
+// Initialize app on load
+window.addEventListener('DOMContentLoaded', async () => {
+  initWeekSelect();
+  await loadFormulaConfig();
+  await loadMatchups(1);
+});
+
+function initWeekSelect() {
+  const select = document.getElementById('week-select');
+  select.innerHTML = '';
+  for (let i = 1; i <= 18; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `Week ${i}`;
+    select.appendChild(opt);
+  }
+}
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById(`tab-${tabId}`).classList.add('active');
+
+  if (tabId === 'advisor') {
+    renderAdvisor();
+  } else if (tabId === 'waiver') {
+    loadWaiverAdvisor();
+  } else if (tabId === 'learnings') {
+    loadLearningsAnalysis(true);
+  }
+}
+
+async function onWeekChange() {
+  const week = parseInt(document.getElementById('week-select').value, 10);
+  await loadMatchups(week);
+}
+
+async function triggerGlobalRefresh() {
+  const icon = document.getElementById('refresh-icon');
+  const btn = document.getElementById('btn-global-refresh');
+  if (icon) icon.classList.add('spinning');
+  if (btn) btn.disabled = true;
+
+  try {
+    await loadMatchups(state.selectedWeek, true);
+
+    if (document.getElementById('tab-waiver')?.classList.contains('active')) {
+      await loadWaiverAdvisor();
+    } else if (document.getElementById('tab-learnings')?.classList.contains('active')) {
+      await loadLearningsAnalysis(true);
+    }
+
+    showToast('⚡ Live data refreshed from ESPN & Kalshi!');
+  } catch (err) {
+    console.error('Refresh failed:', err);
+    showToast('⚠️ Refresh error: ' + err.message);
+  } finally {
+    setTimeout(() => {
+      if (icon) icon.classList.remove('spinning');
+      if (btn) btn.disabled = false;
+    }, 600);
+  }
+}
+
+async function loadMatchups(week, forceRefresh = false) {
+  try {
+    const res = await fetch(`/api/espn/matchups-detailed?week=${week}${forceRefresh ? '&refresh=true' : ''}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    state.currentWeek = data.currentWeek;
+    state.selectedWeek = data.selectedWeek;
+    state.matchups = data.matchups || [];
+    state.formulaConfig = data.formulaConfig || state.formulaConfig;
+
+    document.getElementById('week-select').value = state.selectedWeek;
+    document.getElementById('league-title').textContent = data.leagueName || 'Fantasy Projection Lab';
+
+    const timeEl = document.getElementById('last-updated-time');
+    if (timeEl) {
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      timeEl.textContent = `Live: ${timeStr}`;
+    }
+
+    // Collect all players for advisor
+    state.allPlayersList = [];
+    state.matchups.forEach(m => {
+      if (m.away) state.allPlayersList.push(...m.away.starters, ...m.away.bench);
+      if (m.home) state.allPlayersList.push(...m.home.starters, ...m.home.bench);
+    });
+
+    renderMatchupsCarousel();
+    renderSelectedMatchup();
+    renderAdvisor();
+  } catch (err) {
+    console.error('Failed loading matchups:', err);
+  }
+}
+
+function renderMatchupsCarousel() {
+  const container = document.getElementById('matchups-carousel');
+  container.innerHTML = '';
+
+  state.matchups.forEach((m, idx) => {
+    if (!m.away || !m.home) return;
+    const pill = document.createElement('div');
+    pill.className = `matchup-pill ${idx === state.selectedMatchupIndex ? 'active' : ''}`;
+    pill.onclick = () => selectMatchup(idx);
+
+    const isMine = m.away.mine || m.home.mine;
+
+    pill.innerHTML = `
+      ${isMine ? '<span class="badge-mine">MY MATCHUP</span>' : ''}
+      <div class="team-row ${m.away.modelStarterTotal >= m.home.modelStarterTotal ? 'bold' : ''}">
+        <span>${escapeHtml(m.away.teamName)}</span>
+        <span class="pts-comp">
+          <span style="color:var(--text-muted);">${m.away.espnStarterTotal}</span>
+          <strong style="color:var(--accent-cyan);">${m.away.modelStarterTotal}</strong>
+        </span>
+      </div>
+      <div class="team-row ${m.home.modelStarterTotal >= m.away.modelStarterTotal ? 'bold' : ''}">
+        <span>${escapeHtml(m.home.teamName)}</span>
+        <span class="pts-comp">
+          <span style="color:var(--text-muted);">${m.home.espnStarterTotal}</span>
+          <strong style="color:var(--accent-cyan);">${m.home.modelStarterTotal}</strong>
+        </span>
+      </div>
+    `;
+    container.appendChild(pill);
+  });
+}
+
+function selectMatchup(index) {
+  state.selectedMatchupIndex = index;
+  renderMatchupsCarousel();
+  renderSelectedMatchup();
+}
+
+function renderSelectedMatchup() {
+  const matchup = state.matchups[state.selectedMatchupIndex];
+  if (!matchup || !matchup.away || !matchup.home) return;
+
+  const { away, home } = matchup;
+
+  // Banner
+  const banner = document.getElementById('matchup-banner');
+  const modelDiff = Math.abs(Math.round((home.modelStarterTotal - away.modelStarterTotal) * 10) / 10);
+  const modelLeader = home.modelStarterTotal >= away.modelStarterTotal ? home.teamName : away.teamName;
+  const espnLeader = home.espnStarterTotal >= away.espnStarterTotal ? home.teamName : away.teamName;
+
+  let flipNotice = '';
+  if (modelLeader !== espnLeader) {
+    flipNotice = `<div class="insight-pill" style="background:rgba(245,158,11,0.15); border-color:#f59e0b; color:#fbbf24;">⚡ Model flips winner to ${escapeHtml(modelLeader)}!</div>`;
+  } else {
+    flipNotice = `<div class="insight-pill">Model favors ${escapeHtml(modelLeader)} by +${modelDiff}</div>`;
+  }
+
+  banner.innerHTML = `
+    <div class="banner-team away">
+      <div class="team-title">
+        ${escapeHtml(away.teamName)} ${away.mine ? '<span style="font-size:0.65rem; background:var(--accent-primary); padding:2px 6px; border-radius:4px;">MY TEAM</span>' : ''}
+      </div>
+      <div class="team-record">${away.record ? 'Record: ' + away.record : ''}</div>
+      <div class="banner-scores">
+        <div class="score-block">
+          <span class="label">ESPN Proj</span>
+          <span class="value">${away.espnStarterTotal}</span>
+        </div>
+        <div class="score-block model">
+          <span class="label">Model Proj</span>
+          <span class="value">${away.modelStarterTotal}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="banner-vs">
+      <div class="vs-circle">VS</div>
+      ${flipNotice}
+    </div>
+
+    <div class="banner-team home">
+      <div class="team-title">
+        ${escapeHtml(home.teamName)} ${home.mine ? '<span style="font-size:0.65rem; background:var(--accent-primary); padding:2px 6px; border-radius:4px;">MY TEAM</span>' : ''}
+      </div>
+      <div class="team-record">${home.record ? 'Record: ' + home.record : ''}</div>
+      <div class="banner-scores">
+        <div class="score-block">
+          <span class="label">ESPN Proj</span>
+          <span class="value">${home.espnStarterTotal}</span>
+        </div>
+        <div class="score-block model">
+          <span class="label">Model Proj</span>
+          <span class="value">${home.modelStarterTotal}</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Rosters Side-by-Side
+  const rostersContainer = document.getElementById('rosters-container');
+  rostersContainer.innerHTML = `
+    ${renderRosterCard(away, 'Away')}
+    ${renderRosterCard(home, 'Home')}
+  `;
+}
+
+function renderRosterCard(team, sideLabel) {
+  const renderRows = (players) => {
+    return players.map((p, i) => {
+      const deltaClass = p.delta > 0.3 ? 'pos' : (p.delta < -0.3 ? 'neg' : 'neu');
+      const deltaSign = p.delta > 0 ? `+${p.delta}` : `${p.delta}`;
+      const injTag = p.injuryStatus && p.injuryStatus !== 'ACTIVE' && p.injuryStatus !== 'HEALTHY'
+        ? `<span class="tag-inj ${p.injuryStatus.startsWith('Q') ? 'Q' : 'O'}">${p.injuryStatus.substring(0, 1)}</span>`
+        : '';
+      const kalshiBadge = p.hasKalshiSignal
+        ? `<span class="kalshi-pill" title="Kalshi prediction market consensus integrated">🏛️ Kalshi</span>`
+        : '';
+      const momentumBadge = p.momentum && p.momentum.status === 'SURGING'
+        ? `<span class="surge-badge" title="${escapeHtml(p.momentum.reason)}">🔥 +${Math.round((p.momentum.multiplier - 1) * 100)}%</span>`
+        : (p.momentum && p.momentum.status === 'FADING'
+          ? `<span class="fade-badge" title="${escapeHtml(p.momentum.reason)}">🧊 -${Math.round((1 - p.momentum.multiplier) * 100)}%</span>`
+          : '');
+
+      return `
+        <tr onclick="openPlayerModal('${escapeHtml(p.name)}')">
+          <td style="width: 50px;"><span class="slot-badge ${p.slot}" data-slot="${p.slot}">${p.slot}</span></td>
+          <td>
+            <div class="player-cell">
+              <span class="p-name">${escapeHtml(p.name)} ${injTag} ${kalshiBadge} ${momentumBadge}</span>
+              <span class="p-meta">${p.pos} • ${p.nflTeam} vs ${p.oppTeam}</span>
+            </div>
+          </td>
+          <td style="text-align:right;"><span class="proj-val" style="color:var(--text-secondary);">${p.espnProj}</span></td>
+          <td style="text-align:right;"><span class="proj-val model">${p.ourProj}</span></td>
+          <td style="text-align:right;"><span class="delta-pill ${deltaClass}">${deltaSign}</span></td>
+        </tr>
+      `;
+    }).join('');
+  };
+
+  return `
+    <div class="roster-card">
+      <div class="roster-card-header">
+        <h3>${escapeHtml(team.teamName)}</h3>
+        <span style="font-size:0.8rem; color:var(--accent-cyan); font-weight:700;">Starters: ${team.modelStarterTotal} pts</span>
+      </div>
+      <table class="roster-table">
+        <thead>
+          <tr>
+            <th>Slot</th>
+            <th>Player</th>
+            <th style="text-align:right;">ESPN</th>
+            <th style="text-align:right;">Model</th>
+            <th style="text-align:right;">Delta</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${renderRows(team.starters)}
+        </tbody>
+      </table>
+
+      <div style="padding: 0.65rem 1rem; background: rgba(0, 0, 0, 0.25); border-top: 1px solid var(--border-color); border-bottom: 1px solid rgba(255, 255, 255, 0.04); font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;">
+        Bench Players (${team.bench.length})
+      </div>
+      <table class="roster-table">
+        <tbody>
+          ${renderRows(team.bench)}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function setAdvisorScope(scope, btn) {
+  state.advisorScope = scope;
+  document.querySelectorAll('#tab-advisor #advisor-scope-my, #tab-advisor #advisor-scope-all').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderAdvisor();
+}
+
+function filterAdvisorPos(pos, btn) {
+  state.advisorPos = pos;
+  document.querySelectorAll('#tab-advisor .pos-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderAdvisor();
+}
+
+function renderAdvisor() {
+  const swapsList = document.getElementById('advisor-swaps-list');
+  const edgesList = document.getElementById('advisor-edges-list');
+  const swapsBox = document.getElementById('advisor-swaps-box');
+  if (!edgesList) return;
+
+  const myMatchup = (state.matchups || []).find(m => m.away?.mine || m.home?.mine);
+  const myTeam = myMatchup ? (myMatchup.away?.mine ? myMatchup.away : myMatchup.home) : null;
+  const myTeamName = myTeam?.teamName || 'My Team';
+
+  const myTeamNameEl = document.getElementById('advisor-myteam-name');
+  if (myTeamNameEl) myTeamNameEl.textContent = myTeamName;
+
+  const scope = state.advisorScope || 'my';
+  const filterPos = state.advisorPos || 'ALL';
+
+  // 1. Lineup Swap Recommendations (Bench vs Starters)
+  if (swapsList && swapsBox) {
+    if (scope === 'my' && myTeam) {
+      swapsBox.style.display = 'block';
+      const starters = myTeam.starters || [];
+      const bench = myTeam.bench || [];
+      const swaps = [];
+
+      bench.forEach(b => {
+        starters.forEach(s => {
+          const isDirectPos = (b.pos === s.pos && s.slot === s.pos);
+          const isFlex = (s.slot === 'FLEX' && ['RB', 'WR', 'TE'].includes(b.pos));
+          if ((isDirectPos || isFlex) && b.ourProj > s.ourProj) {
+            swaps.push({
+              bench: b,
+              starter: s,
+              diff: Math.round((b.ourProj - s.ourProj) * 10) / 10,
+              type: isDirectPos ? `Direct ${b.pos} Swap` : `FLEX Upgrade`
+            });
+          }
+        });
+      });
+
+      if (!swaps.length) {
+        swapsList.innerHTML = `
+          <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.25); border-radius:var(--radius-sm); padding:1rem; display:flex; align-items:center; gap:0.75rem;">
+            <span style="font-size:1.4rem;">✅</span>
+            <div>
+              <strong style="color:#34d399; font-size:0.92rem;">Optimal Starting Lineup Active</strong>
+              <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:2px;">
+                Every active starter on your roster projects higher than your available bench options for this week.
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        swaps.sort((a, b) => b.diff - a.diff);
+        swapsList.innerHTML = swaps.map(sw => `
+          <div class="edge-card" style="border-left: 3px solid #10b981; margin-bottom:0.75rem; cursor:pointer;" onclick="openPlayerModal('${escapeHtml(sw.bench.name)}')">
+            <div style="flex:1;">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span style="background:rgba(16,185,129,0.15); color:#34d399; font-size:0.7rem; font-weight:800; padding:0.15rem 0.45rem; border-radius:4px; font-family:var(--font-display);">
+                  ${sw.type.toUpperCase()}
+                </span>
+                <strong style="font-size:0.95rem;">Start ${escapeHtml(sw.bench.name)}</strong>
+                <span style="font-size:0.8rem; color:var(--text-muted);">(${sw.bench.pos} • Bench)</span>
+                <span style="color:var(--text-muted); font-size:0.85rem;">over</span>
+                <strong style="font-size:0.95rem; color:var(--text-secondary);">${escapeHtml(sw.starter.name)}</strong>
+                <span style="font-size:0.8rem; color:var(--text-muted);">(${sw.starter.slot} Starter)</span>
+              </div>
+              <p style="font-size:0.8rem; color:#34d399; margin-top:0.35rem; margin-bottom:0;">
+                📈 +${sw.diff} projected point gain over current starter
+              </p>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:0.75rem; color:var(--text-muted);">Starter: ${sw.starter.ourProj} pts</div>
+              <div style="font-family:var(--font-display); font-size:1.15rem; font-weight:800; color:#34d399;">Bench: ${sw.bench.ourProj} pts</div>
+            </div>
+          </div>
+        `).join('');
+      }
+    } else {
+      swapsBox.style.display = 'none';
+    }
+  }
+
+  // 2. Model Divergence & Edges
+  let pool = [];
+  if (scope === 'my' && myTeam) {
+    pool = [...myTeam.starters, ...myTeam.bench];
+  } else {
+    pool = [...state.allPlayersList];
+  }
+
+  // Filter out unpopulated ESPN projections where espnProj === 0 on D/ST or inactive players
+  let filtered = pool.filter(p => {
+    // If D/ST has espnProj === 0, ESPN hasn't published defense projections yet
+    if (p.pos === 'D/ST' && (!p.espnProj || p.espnProj === 0)) return false;
+    
+    // Position filter
+    if (filterPos === 'OFFENSE') {
+      if (p.pos === 'D/ST' || p.pos === 'K') return false;
+    } else if (filterPos !== 'ALL') {
+      if (p.pos !== filterPos && p.slot !== filterPos) return false;
+    }
+    return Math.abs(p.delta) >= 0.4;
+  });
+
+  filtered.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+
+  if (!filtered.length) {
+    edgesList.innerHTML = `
+      <p style="color:var(--text-muted); font-size:0.85rem; padding:1rem 0; text-align:center;">
+        No significant model divergences (≥ 0.4 pts) found for the selected view.
+      </p>
+    `;
+    return;
+  }
+
+  edgesList.innerHTML = filtered.slice(0, 12).map(p => {
+    const isHigher = p.delta > 0;
+    const isStarter = p.slot !== 'BE' && p.slot !== 'IR';
+    return `
+      <div class="edge-card" onclick="openPlayerModal('${escapeHtml(p.name)}')" style="cursor:pointer; margin-bottom:0.75rem;">
+        <div>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <strong style="font-size:0.95rem;">${escapeHtml(p.name)}</strong>
+            <span class="slot-badge ${p.slot}" style="font-size:0.65rem; padding:0.1rem 0.4rem;">${p.slot}</span>
+            <span style="font-size:0.8rem; color:var(--text-muted);">${p.pos} • ${p.nflTeam} vs ${p.oppTeam}</span>
+          </div>
+          <p style="font-size:0.8rem; color:${isHigher ? '#34d399' : '#f87171'}; margin-top:0.35rem; margin-bottom:0;">
+            ${isHigher
+              ? `📈 High Upside Start: Model projects +${p.delta} pts over ESPN (${isStarter ? 'Starting in your lineup' : 'Bench asset'})`
+              : `⚠️ Downside Risk: Model projects ${p.delta} pts below ESPN (${isStarter ? 'Starting in your lineup' : 'Bench asset'})`
+            }
+          </p>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.78rem; color:var(--text-muted);">ESPN: ${p.espnProj}</div>
+          <div style="font-family:var(--font-display); font-size:1.15rem; font-weight:800; color:var(--accent-cyan);">Model: ${p.ourProj}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Player Modal Logic
+function openPlayerModal(playerName) {
+  let player = state.allPlayersList.find(p => p.name === playerName);
+  if (!player && state.waiverData?.freeAgents) {
+    player = state.waiverData.freeAgents.find(p => p.name === playerName);
+  }
+  if (!player && state.learningsData) {
+    const ld = state.learningsData;
+    const hitOrMiss = (ld.notableHits || []).concat(ld.notableMisses || []).find(p => p.name === playerName);
+    if (hitOrMiss) {
+      player = hitOrMiss;
+    } else {
+      const mom = (ld.playerMomentum || []).find(p => p.name === playerName);
+      if (mom) {
+        player = {
+          name: mom.name,
+          pos: mom.pos,
+          nflTeam: mom.nflTeam,
+          oppTeam: 'NFL',
+          espnProj: mom.projPts,
+          ourProj: Math.round(mom.projPts * mom.multiplier * 10) / 10,
+          delta: Math.round((mom.projPts * mom.multiplier - mom.projPts) * 10) / 10,
+          momentum: {
+            status: mom.status,
+            multiplier: mom.multiplier,
+            diffPts: mom.diffPts,
+            reason: mom.reason,
+          },
+          breakdown: {
+            rationale: [mom.reason],
+          }
+        };
+      }
+    }
+  }
+  if (!player) return;
+
+  document.getElementById('modal-player-name').textContent = player.name;
+  document.getElementById('modal-player-meta').textContent = `${player.pos} • ${player.nflTeam} vs ${player.oppTeam}`;
+  document.getElementById('modal-espn-pts').textContent = player.espnProj;
+  document.getElementById('modal-model-pts').textContent = player.ourProj;
+
+  const deltaSign = player.delta > 0 ? `+${player.delta}` : `${player.delta}`;
+  const badge = document.getElementById('modal-delta-badge');
+  badge.textContent = `${deltaSign} Δ`;
+  badge.className = `delta-pill ${player.delta > 0.3 ? 'pos' : (player.delta < -0.3 ? 'neg' : 'neu')}`;
+
+  const b = player.breakdown || {};
+  document.getElementById('modal-touches').textContent = `${b.targets || 0} / ${b.carries || 0}`;
+  document.getElementById('modal-yards').textContent = `${b.recYards || 0} / ${b.rushYards || 0}`;
+  document.getElementById('modal-tds').textContent = `${((b.recTD || 0) + (b.rushTD || 0) + (b.passTD || 0)).toFixed(2)} xTD`;
+
+  const r = player.range || { floor: 0, median: player.ourProj, ceiling: player.ourProj };
+  document.getElementById('modal-floor').textContent = `Floor: ${r.floor}`;
+  document.getElementById('modal-median').textContent = `Median: ${r.median}`;
+  document.getElementById('modal-ceiling').textContent = `Ceiling: ${r.ceiling}`;
+
+  const kalshiBox = document.getElementById('modal-kalshi-box');
+  if (player.hasKalshiSignal && player.kalshiMarket) {
+    if (kalshiBox) kalshiBox.style.display = 'block';
+    const mType = player.kalshiMarket.marketType || 'Prop Market';
+    document.getElementById('modal-kalshi-title').textContent = `Kalshi ${mType} Consensus`;
+    document.getElementById('modal-kalshi-expected').textContent = `${player.kalshiMarket.expectedYards} yds`;
+    document.getElementById('modal-kalshi-median').textContent = `${player.kalshiMarket.medianYards} yds`;
+    document.getElementById('modal-kalshi-range').textContent = `${player.kalshiMarket.floorYards} - ${player.kalshiMarket.ceilingYards} yds`;
+    document.getElementById('modal-kalshi-strikes').textContent = `${player.kalshiMarket.totalStrikes} strikes traded`;
+  } else if (kalshiBox) {
+    kalshiBox.style.display = 'none';
+  }
+
+  const momBox = document.getElementById('modal-momentum-box');
+  if (player.momentum) {
+    if (momBox) {
+      momBox.style.display = 'block';
+      const isSurge = player.momentum.status === 'SURGING';
+      document.getElementById('modal-momentum-icon').textContent = isSurge ? '🔥' : '🧊';
+      document.getElementById('modal-momentum-title').textContent = isSurge ? 'Player Momentum Surge Active' : 'Player Role Fade Active';
+      const badge = document.getElementById('modal-momentum-badge');
+      badge.className = isSurge ? 'surge-badge' : 'fade-badge';
+      badge.textContent = isSurge ? `+${Math.round((player.momentum.multiplier - 1) * 100)}% Multiplier` : `-${Math.round((1 - player.momentum.multiplier) * 100)}% Multiplier`;
+      document.getElementById('modal-momentum-desc').textContent = player.momentum.reason || '';
+    }
+  } else if (momBox) {
+    momBox.style.display = 'none';
+  }
+
+  const rationaleEl = document.getElementById('modal-rationale');
+  rationaleEl.innerHTML = (b.rationale || ['Standard baseline projection alignment.'])
+    .map(r => `<li>${escapeHtml(r)}</li>`)
+    .join('');
+
+  document.getElementById('player-modal').classList.add('active');
+}
+
+function closePlayerModal() {
+  document.getElementById('player-modal').classList.remove('active');
+}
+
+function onModalOverlayClick(e) {
+  if (e.target.id === 'player-modal') closePlayerModal();
+}
+
+// Formula Config Handlers
+async function loadFormulaConfig() {
+  try {
+    const res = await fetch('/api/formula/config');
+    if (!res.ok) return;
+    const cfg = await res.json();
+    state.formulaConfig = cfg;
+
+    const s = cfg.scoring || {};
+    const t = cfg.tuning || {};
+
+    document.getElementById('score-rec').value = s.receptions ?? 1.0;
+    document.getElementById('score-rec-yd').value = s.recYardsPerPt ?? 10;
+    document.getElementById('score-rush-yd').value = s.rushYardsPerPt ?? 10;
+    document.getElementById('score-pass-yd').value = s.passYardsPerPt ?? 25;
+    document.getElementById('score-pass-td').value = s.passTD ?? 4;
+    document.getElementById('score-td').value = s.recTD ?? 6;
+    document.getElementById('score-turnover').value = s.fumbleLost ?? -2;
+
+    setRangeValue('tune-matchup', 'tune-matchup-val', t.matchupIntensity ?? 1.0, 'x');
+    setRangeValue('tune-td', 'tune-td-val', t.tdConversionScale ?? 1.0, 'x');
+    setRangeValue('tune-script', 'tune-script-val', t.gameScriptWeight ?? 1.0, 'x');
+    setRangeValue('tune-shrink', 'tune-shrink-val', t.shrinkageK ?? 40, '');
+    setRangeValue('tune-pace', 'tune-pace-val', t.paceModifier ?? 1.0, 'x');
+
+    // Factor Toggles
+    document.getElementById('toggle-factor-matchup').checked = t.enableMatchupAdjustments !== false;
+    document.getElementById('toggle-factor-injury').checked = t.enableInjuryRiskDiscount !== false;
+    document.getElementById('toggle-factor-pace').checked = t.enablePaceModifier !== false;
+    document.getElementById('toggle-factor-xtd').checked = t.enableExpectedTDScaling !== false;
+    document.getElementById('toggle-factor-script').checked = t.enableGameScript !== false;
+    document.getElementById('toggle-factor-shrink').checked = t.enableBayesianShrinkage !== false;
+    const momToggle = document.getElementById('toggle-factor-momentum');
+    if (momToggle) momToggle.checked = t.enablePlayerMomentum !== false;
+
+    // Kalshi Toggles
+    const useKalshi = t.useKalshiMarketData === true;
+    const kalshiToggle = document.getElementById('tune-kalshi-toggle');
+    if (kalshiToggle) {
+      kalshiToggle.checked = useKalshi;
+      updateKalshiToggleUI(useKalshi);
+    }
+    const passCheck = document.getElementById('tune-kalshi-pass');
+    if (passCheck) passCheck.checked = t.useKalshiPassingYards !== false;
+    const rushCheck = document.getElementById('tune-kalshi-rush');
+    if (rushCheck) rushCheck.checked = t.useKalshiRushingYards !== false;
+    const recCheck = document.getElementById('tune-kalshi-rec');
+    if (recCheck) recCheck.checked = t.useKalshiReceivingYards !== false;
+
+    const kalshiWeight = t.kalshiWeight ?? 0.40;
+    const kalshiWeightSlider = document.getElementById('tune-kalshi-weight');
+    if (kalshiWeightSlider) {
+      kalshiWeightSlider.value = kalshiWeight;
+      const weightLabel = document.getElementById('tune-kalshi-weight-val');
+      if (weightLabel) weightLabel.textContent = Math.round(kalshiWeight * 100) + '%';
+    }
+  } catch (err) {
+    console.error('Error loading formula config:', err);
+  }
+}
+
+function setRangeValue(inputId, labelId, val, suffix) {
+  const el = document.getElementById(inputId);
+  if (el) el.value = val;
+  updateRangeLabel(labelId, val + suffix);
+}
+
+function updateRangeLabel(labelId, text) {
+  const el = document.getElementById(labelId);
+  if (el) el.textContent = text.endsWith('x') || isNaN(text) ? text : text + 'x';
+}
+
+async function saveFormulaConfig() {
+  const payload = {
+    scoring: {
+      receptions: parseFloat(document.getElementById('score-rec').value),
+      recYardsPerPt: parseFloat(document.getElementById('score-rec-yd').value),
+      rushYardsPerPt: parseFloat(document.getElementById('score-rush-yd').value),
+      passYardsPerPt: parseFloat(document.getElementById('score-pass-yd').value),
+      passTD: parseFloat(document.getElementById('score-pass-td').value),
+      rushTD: parseFloat(document.getElementById('score-td').value),
+      recTD: parseFloat(document.getElementById('score-td').value),
+      fumbleLost: parseFloat(document.getElementById('score-turnover').value),
+      interception: parseFloat(document.getElementById('score-turnover').value),
+    },
+    tuning: {
+      enableMatchupAdjustments: document.getElementById('toggle-factor-matchup')?.checked ?? true,
+      enableInjuryRiskDiscount: document.getElementById('toggle-factor-injury')?.checked ?? true,
+      enablePaceModifier: document.getElementById('toggle-factor-pace')?.checked ?? true,
+      enableExpectedTDScaling: document.getElementById('toggle-factor-xtd')?.checked ?? true,
+      enableGameScript: document.getElementById('toggle-factor-script')?.checked ?? true,
+      enableBayesianShrinkage: document.getElementById('toggle-factor-shrink')?.checked ?? true,
+      enablePlayerMomentum: document.getElementById('toggle-factor-momentum')?.checked ?? true,
+
+      useKalshiMarketData: document.getElementById('tune-kalshi-toggle')?.checked || false,
+      useKalshiPassingYards: document.getElementById('tune-kalshi-pass')?.checked ?? true,
+      useKalshiRushingYards: document.getElementById('tune-kalshi-rush')?.checked ?? true,
+      useKalshiReceivingYards: document.getElementById('tune-kalshi-rec')?.checked ?? true,
+      kalshiWeight: parseFloat(document.getElementById('tune-kalshi-weight')?.value || 0.40),
+
+      matchupIntensity: parseFloat(document.getElementById('tune-matchup').value),
+      tdConversionScale: parseFloat(document.getElementById('tune-td').value),
+      gameScriptWeight: parseFloat(document.getElementById('tune-script').value),
+      shrinkageK: parseInt(document.getElementById('tune-shrink').value, 10),
+      paceModifier: parseFloat(document.getElementById('tune-pace').value),
+    }
+  };
+
+  try {
+    const res = await fetch('/api/formula/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      showToast('Weekly formula saved and matchups recomputed!');
+      await loadMatchups(state.selectedWeek);
+    }
+  } catch (e) {
+    alert('Failed saving formula: ' + e.message);
+  }
+}
+
+function resetFormulaDefaults() {
+  document.getElementById('score-rec').value = 1.0;
+  document.getElementById('score-rec-yd').value = 10;
+  document.getElementById('score-rush-yd').value = 10;
+  document.getElementById('score-pass-yd').value = 25;
+  document.getElementById('score-pass-td').value = 4;
+  document.getElementById('score-td').value = 6;
+  document.getElementById('score-turnover').value = -2;
+
+  setRangeValue('tune-matchup', 'tune-matchup-val', 1.0, 'x');
+  setRangeValue('tune-td', 'tune-td-val', 1.0, 'x');
+  setRangeValue('tune-script', 'tune-script-val', 1.0, 'x');
+  setRangeValue('tune-shrink', 'tune-shrink-val', 40, '');
+  setRangeValue('tune-pace', 'tune-pace-val', 1.0, 'x');
+
+  resetAllFactorToggles(false);
+
+  const kalshiToggle = document.getElementById('tune-kalshi-toggle');
+  if (kalshiToggle) {
+    kalshiToggle.checked = false;
+    updateKalshiToggleUI(false);
+  }
+  const passCheck = document.getElementById('tune-kalshi-pass');
+  if (passCheck) passCheck.checked = true;
+  const rushCheck = document.getElementById('tune-kalshi-rush');
+  if (rushCheck) rushCheck.checked = true;
+  const recCheck = document.getElementById('tune-kalshi-rec');
+  if (recCheck) recCheck.checked = true;
+
+  const kalshiWeightSlider = document.getElementById('tune-kalshi-weight');
+  if (kalshiWeightSlider) {
+    kalshiWeightSlider.value = 0.40;
+    const weightLabel = document.getElementById('tune-kalshi-weight-val');
+    if (weightLabel) weightLabel.textContent = '40%';
+  }
+
+  saveFormulaConfig();
+}
+
+function resetAllFactorToggles(autoSave = true) {
+  const ids = [
+    'toggle-factor-matchup',
+    'toggle-factor-injury',
+    'toggle-factor-pace',
+    'toggle-factor-xtd',
+    'toggle-factor-script',
+    'toggle-factor-shrink',
+    'toggle-factor-momentum',
+  ];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.checked = true;
+  });
+  if (autoSave) saveFormulaConfig();
+}
+
+async function loadLearningsAnalysis(simulated = false) {
+  try {
+    const badge = document.getElementById('learnings-mode-badge');
+    if (badge) {
+      badge.textContent = simulated ? 'SIMULATION CALIBRATION' : 'LIVE BACKTEST';
+      badge.style.background = simulated ? 'rgba(245, 158, 11, 0.15)' : 'rgba(99, 102, 241, 0.15)';
+      badge.style.color = simulated ? '#fbbf24' : '#a5b4fc';
+      badge.style.borderColor = simulated ? 'rgba(245, 158, 11, 0.3)' : 'rgba(99, 102, 241, 0.3)';
+    }
+
+    const res = await fetch(`/api/learnings/analysis?week=${state.selectedWeek}&simulated=${simulated}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    state.learningsData = data;
+
+    renderLearningsUI(data);
+  } catch (err) {
+    console.error('Failed loading learnings:', err);
+  }
+}
+
+function renderLearningsUI(data) {
+  if (!data || !data.hasData) {
+    document.getElementById('stat-model-mae').textContent = 'N/A';
+    document.getElementById('stat-espn-mae').textContent = 'N/A';
+    document.getElementById('stat-win-rate').textContent = 'N/A';
+    document.getElementById('stat-sample-size').textContent = '0';
+    return;
+  }
+
+  const s = data.summary;
+  document.getElementById('scorecard-week-num').textContent = data.week;
+  document.getElementById('stat-model-mae').textContent = s.modelMAE;
+  document.getElementById('stat-espn-mae').textContent = s.espnMAE;
+  
+  const diffEl = document.getElementById('stat-mae-diff');
+  if (s.maeImprovement > 0) {
+    diffEl.textContent = `+${s.maeImprovement} pts better than ESPN`;
+    diffEl.style.color = '#34d399';
+  } else {
+    diffEl.textContent = `${s.maeImprovement} pts vs ESPN`;
+    diffEl.style.color = '#fb7185';
+  }
+
+  document.getElementById('stat-win-rate').textContent = `${s.modelWinRate}%`;
+  document.getElementById('stat-win-counts').textContent = `${s.modelWins} model wins / ${s.espnWins} ESPN wins`;
+  document.getElementById('stat-sample-size').textContent = `${s.totalPlayers} players`;
+
+  // Attribution Matrix
+  const attrGrid = document.getElementById('attribution-matrix-grid');
+  const fa = data.factorAttribution || {};
+  attrGrid.innerHTML = Object.entries(fa).map(([k, v]) => {
+    const isPos = v.alpha >= 0;
+    return `
+      <div style="background:rgba(255,255,255,0.02); border:1px solid ${isPos ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}; border-radius:var(--radius-md); padding:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <strong style="font-size:0.9rem;">${escapeHtml(v.label)}</strong>
+          <span class="delta-pill ${isPos ? 'pos' : 'neg'}">${isPos ? '+' + v.alpha : v.alpha} Alpha</span>
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.35rem;">
+          ${isPos ? 'Reduced projection error across evaluated players.' : 'Added variance compared to baseline.'}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Recommendations
+  const notesList = document.getElementById('learnings-notes-list');
+  const rec = data.recommendations || {};
+  state.currentRecommendations = rec;
+  notesList.innerHTML = (rec.notes || ['Model parameters aligned with current game variance.'])
+    .map(n => `<li>${escapeHtml(n)}</li>`)
+    .join('');
+
+  // Player Momentum Radar
+  const momTbody = document.getElementById('momentum-radar-tbody');
+  const momentumList = data.playerMomentum || [];
+  if (!momentumList.length) {
+    momTbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:1rem;">All evaluated players performed in line with statistical bounds.</td></tr>';
+  } else {
+    momTbody.innerHTML = momentumList.map(p => {
+      const isSurge = p.status === 'SURGING';
+      return `
+        <tr onclick="openPlayerModal('${escapeHtml(p.name)}')" style="cursor:pointer;">
+          <td><span class="${isSurge ? 'surge-badge' : 'fade-badge'}">${isSurge ? '🔥 SURGING' : '🧊 FADING'}</span></td>
+          <td><strong style="color:var(--text-primary);">${escapeHtml(p.name)}</strong></td>
+          <td><span style="color:var(--text-muted); font-size:0.8rem;">${p.pos} • ${p.nflTeam}</span></td>
+          <td style="text-align:right;"><span style="color:var(--text-muted); font-family:var(--font-display);">${p.projPts}</span></td>
+          <td style="text-align:right;"><span style="color:var(--accent-cyan); font-family:var(--font-display); font-weight:700;">${p.actualPts}</span></td>
+          <td style="text-align:right;"><span style="color:${isSurge ? '#34d399' : '#fb7185'}; font-weight:700;">${p.ratio}x</span></td>
+          <td style="text-align:right;"><span style="color:${isSurge ? '#34d399' : '#fb7185'}; font-weight:800;">${p.multiplier}x</span></td>
+          <td style="font-size:0.8rem; color:var(--text-secondary);">${escapeHtml(p.reason)}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Hits
+  const hitsContainer = document.getElementById('hits-container');
+  const hits = data.notableHits || [];
+  if (!hits.length) {
+    hitsContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.82rem;">No notable large-delta model hits this week.</p>';
+  } else {
+    hitsContainer.innerHTML = hits.map(p => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+        <div>
+          <strong style="font-size:0.88rem;">${escapeHtml(p.name)}</strong>
+          <span style="font-size:0.75rem; color:var(--text-muted); margin-left:0.35rem;">${p.pos} • ${p.nflTeam}</span>
+          <div style="font-size:0.75rem; color:#34d399; margin-top:2px;">Model: ${p.ourProj} | ESPN: ${p.espnProj} | Actual: <strong>${p.actual}</strong></div>
+        </div>
+        <span class="delta-pill pos">+${Math.round((p.espnErr - p.modelErr) * 10) / 10} pts closer</span>
+      </div>
+    `).join('');
+  }
+
+  // Misses
+  const missesContainer = document.getElementById('misses-container');
+  const misses = data.notableMisses || [];
+  if (!misses.length) {
+    missesContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.82rem;">No high variance outliers recorded.</p>';
+  } else {
+    missesContainer.innerHTML = misses.map(p => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+        <div>
+          <strong style="font-size:0.88rem;">${escapeHtml(p.name)}</strong>
+          <span style="font-size:0.75rem; color:var(--text-muted); margin-left:0.35rem;">${p.pos} • ${p.nflTeam}</span>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Model: ${p.ourProj} | ESPN: ${p.espnProj} | Actual: <strong>${p.actual}</strong></div>
+        </div>
+        <span class="delta-pill neg">${p.modelErr} error</span>
+      </div>
+    `).join('');
+  }
+}
+
+async function applyLearningsRecommendations() {
+  if (!state.currentRecommendations?.suggestedTuning) return;
+  try {
+    const res = await fetch('/api/learnings/apply-recommendations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ suggestedTuning: state.currentRecommendations.suggestedTuning }),
+    });
+    if (res.ok) {
+      showToast('⚡ Recommended formula weights applied and saved!');
+      await loadFormulaConfig();
+      await loadMatchups(state.selectedWeek);
+    }
+  } catch (err) {
+    alert('Failed applying recommendations: ' + err.message);
+  }
+}
+
+function onKalshiToggleChange(checked) {
+  updateKalshiToggleUI(checked);
+  saveFormulaConfig();
+}
+
+function updateKalshiToggleUI(checked) {
+  const status = document.getElementById('kalshi-toggle-status');
+  const box = document.getElementById('kalshi-controls-box');
+  if (status) {
+    status.textContent = checked ? 'ACTIVE (ON)' : 'DISABLED (OFF)';
+    status.style.color = checked ? '#34d399' : 'var(--text-muted)';
+  }
+  if (box) {
+    box.style.opacity = checked ? '1.0' : '0.45';
+    box.style.pointerEvents = checked ? 'auto' : 'none';
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+// Sleeper Trending Helper
+async function loadTrending(type) {
+  const out = document.getElementById('trending-output');
+  out.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Loading real-time Sleeper feed…</p>';
+  try {
+    const res = await fetch(`/api/sleeper/trending?type=${type}&hours=24&limit=15`);
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error('Invalid format');
+    out.innerHTML = `
+      <table class="roster-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Pos</th>
+            <th>Team</th>
+            <th>Status</th>
+            <th style="text-align:right;">Adds/Drops</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map(p => `
+            <tr>
+              <td style="font-weight:600;">${escapeHtml(p.name)}</td>
+              <td><span class="slot-badge ${p.position}">${p.position}</span></td>
+              <td>${p.team || 'FA'}</td>
+              <td><span class="tag-inj ${p.status === 'healthy' ? '' : 'Q'}">${p.status}</span></td>
+              <td style="text-align:right; font-family:var(--font-display); font-weight:700; color:var(--accent-cyan);">${p.count}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    out.innerHTML = `<p style="color:#f43f5e; font-size:0.85rem;">Failed loading trending: ${err.message}</p>`;
+  }
+}
+
+// --- Waiver & Free Agent Advisor Handlers ---
+async function loadWaiverAdvisor() {
+  const upContainer = document.getElementById('waiver-upgrades-container');
+  const radarTbody = document.getElementById('waiver-radar-tbody');
+  const poolTbody = document.getElementById('fa-pool-tbody');
+
+  if (upContainer) upContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Analyzing available free agents against your roster…</p>';
+  if (radarTbody) radarTbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:1rem;">Loading waiver radar…</td></tr>';
+  if (poolTbody) poolTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:1rem;">Loading player pool…</td></tr>';
+
+  try {
+    const res = await fetch(`/api/espn/waiver-advisor?week=${state.selectedWeek}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    state.waiverData = data;
+
+    renderWaiverUpgrades();
+    renderWaiverRadar();
+    renderFAPool();
+  } catch (err) {
+    if (upContainer) upContainer.innerHTML = `<p style="color:#f43f5e; font-size:0.85rem;">Failed loading waiver advisor: ${err.message}</p>`;
+  }
+}
+
+function renderWaiverUpgrades() {
+  const container = document.getElementById('waiver-upgrades-container');
+  if (!container || !state.waiverData) return;
+
+  const { starterUpgrades = [], benchUpgrades = [] } = state.waiverData;
+  const allUpgrades = [...starterUpgrades, ...benchUpgrades];
+
+  if (!allUpgrades.length) {
+    container.innerHTML = `
+      <div class="upgrade-card" style="grid-column: 1 / -1; text-align:center; padding:2rem;">
+        <span style="font-size:2rem; display:block; margin-bottom:0.5rem;">🛡️</span>
+        <strong style="font-size:1.1rem; color:var(--accent-emerald);">Roster Fully Optimized!</strong>
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.35rem;">None of the currently available Free Agents project higher than your active starters or key bench depth for Week ${state.selectedWeek}.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = allUpgrades.map(u => {
+    const isStarter = u.type === 'STARTER_UPGRADE';
+    return `
+      <div class="upgrade-card ${isStarter ? 'starter' : ''}">
+        <div class="upgrade-header">
+          <span class="upgrade-type-badge ${isStarter ? 'starter' : 'bench'}">
+            ${isStarter ? '🔥 Starter Upgrade' : '📈 Bench Stash Upgrade'}
+          </span>
+          <span class="edge-badge">+${u.edge} pts edge</span>
+        </div>
+
+        <div class="upgrade-vs-box">
+          <div class="upgrade-player" onclick="openPlayerModal('${escapeHtml(u.fa.name)}')" style="cursor:pointer;">
+            <span class="tag" style="color:var(--accent-cyan);">${u.fa.status || 'AVAILABLE'}</span>
+            <span class="name">${escapeHtml(u.fa.name)}</span>
+            <span class="score model">${u.fa.ourProj} <span style="font-size:0.75rem; color:var(--text-muted); font-weight:400;">(${u.fa.pos} • ${u.fa.nflTeam})</span></span>
+          </div>
+
+          <div class="upgrade-vs-center">
+            <span style="font-size:0.75rem; font-weight:800; color:var(--text-muted);">OVER</span>
+          </div>
+
+          <div class="upgrade-player" style="text-align:right;">
+            <span class="tag">YOUR ${u.current.slot || u.pos}</span>
+            <span class="name">${escapeHtml(u.current.name)}</span>
+            <span class="score" style="color:var(--text-muted);">${u.current.ourProj} <span style="font-size:0.75rem; font-weight:400;">pts</span></span>
+          </div>
+        </div>
+
+        <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4;">
+          ${escapeHtml(u.reason)}
+        </p>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderWaiverRadar() {
+  const tbody = document.getElementById('waiver-radar-tbody');
+  if (!tbody || !state.waiverData) return;
+
+  const radar = state.waiverData.waiverRadar || [];
+  if (!radar.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:1rem;">No waiver radar recommendations found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = radar.map(p => {
+    let tierClass = 'tier3';
+    if (p.priorityTier.includes('Tier 1')) tierClass = 'tier1';
+    else if (p.priorityTier.includes('Tier 2')) tierClass = 'tier2';
+
+    const deltaSign = p.delta > 0 ? `+${p.delta}` : `${p.delta}`;
+    const deltaClass = p.delta > 0.3 ? 'pos' : (p.delta < -0.3 ? 'neg' : 'neu');
+    const kalshiBadge = p.hasKalshiSignal ? `<span class="kalshi-pill" style="margin-left:4px; font-size:0.65rem;">🏛️ Kalshi</span>` : '';
+
+    return `
+      <tr onclick="openPlayerModal('${escapeHtml(p.name)}')" style="cursor:pointer;">
+        <td><span class="radar-tier ${tierClass}">${escapeHtml(p.priorityTier.split(':')[0])}</span></td>
+        <td>
+          <div class="player-cell">
+            <span class="p-name">${escapeHtml(p.name)} ${kalshiBadge}</span>
+            <span class="p-meta">${p.pos} • ${p.nflTeam} vs ${p.oppTeam}</span>
+          </div>
+        </td>
+        <td><span style="font-size:0.75rem; font-weight:700; color:${p.status === 'FREEAGENT' ? 'var(--accent-cyan)' : '#fbbf24'};">${p.status}</span></td>
+        <td><span style="font-size:0.8rem; font-weight:700; color:#fbbf24;">🔥 ${(p.trendingAdds || 0).toLocaleString()} adds</span></td>
+        <td><span style="font-size:0.85rem; color:var(--text-secondary);">${p.ownership}%</span></td>
+        <td style="text-align:right;"><span class="proj-val" style="color:var(--text-muted);">${p.espnProj}</span></td>
+        <td style="text-align:right;"><span class="proj-val model">${p.ourProj}</span></td>
+        <td style="text-align:right;"><span class="delta-pill ${deltaClass}">${deltaSign}</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterFAPos(pos, btn) {
+  state.activeFAPos = pos;
+  document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderFAPool();
+}
+
+function filterFAPool() {
+  renderFAPool();
+}
+
+function renderFAPool() {
+  const tbody = document.getElementById('fa-pool-tbody');
+  if (!tbody || !state.waiverData) return;
+
+  const query = (document.getElementById('fa-search-input')?.value || '').toLowerCase().trim();
+  let pool = state.waiverData.freeAgents || [];
+
+  if (state.activeFAPos !== 'ALL') {
+    pool = pool.filter(p => p.pos === state.activeFAPos);
+  }
+
+  if (query) {
+    pool = pool.filter(p => p.name.toLowerCase().includes(query) || (p.nflTeam && p.nflTeam.toLowerCase().includes(query)));
+  }
+
+  const displayed = pool.slice(0, 50);
+
+  if (!displayed.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:1rem;">No matching free agents found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = displayed.map(p => {
+    const deltaSign = p.delta > 0 ? `+${p.delta}` : `${p.delta}`;
+    const deltaClass = p.delta > 0.3 ? 'pos' : (p.delta < -0.3 ? 'neg' : 'neu');
+    const kalshiBadge = p.hasKalshiSignal ? `<span class="kalshi-pill" style="margin-left:4px; font-size:0.65rem;">🏛️ Kalshi</span>` : '';
+
+    return `
+      <tr onclick="openPlayerModal('${escapeHtml(p.name)}')" style="cursor:pointer;">
+        <td style="width:50px;"><span class="slot-badge ${p.pos}" data-slot="${p.pos}">${p.pos}</span></td>
+        <td>
+          <div class="player-cell">
+            <span class="p-name">${escapeHtml(p.name)} ${kalshiBadge}</span>
+            <span class="p-meta">${p.nflTeam} vs ${p.oppTeam}</span>
+          </div>
+        </td>
+        <td><span style="font-size:0.75rem; font-weight:700; color:${p.status === 'FREEAGENT' ? 'var(--accent-cyan)' : '#fbbf24'};">${p.status}</span></td>
+        <td><span style="font-size:0.85rem; color:var(--text-secondary);">${p.ownership}%</span></td>
+        <td style="text-align:right;"><span class="proj-val" style="color:var(--text-muted);">${p.espnProj}</span></td>
+        <td style="text-align:right;"><span class="proj-val model">${p.ourProj}</span></td>
+        <td style="text-align:right;"><span class="delta-pill ${deltaClass}">${deltaSign}</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+</script>
+</body>
+</html>

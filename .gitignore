@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Sensitive credentials & private cookies (ESPN SWID, espn_s2)
+config.json
+*/config.json
+.env
+*.env
+
+# Large data & play-by-play caches
+app/data/
+*.csv
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Scratch scripts
+scratch_*
