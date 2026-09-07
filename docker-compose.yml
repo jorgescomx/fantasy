@@ -1,5 +1,6 @@
 services:
   fantasy-lab:
+    image: fantasy:latest
     build:
       context: .
       dockerfile: Dockerfile
