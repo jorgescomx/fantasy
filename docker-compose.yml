@@ -7,7 +7,7 @@ services:
     container_name: fantasy-projection-lab
     restart: unless-stopped
     ports:
-      - "4477:4477"
+      - "8083:4477"
     environment:
       - PORT=4477
       - NODE_ENV=production
