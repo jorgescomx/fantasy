@@ -8,11 +8,44 @@ const { analyzeWeekPerformance } = require('./learningEngine');
 const app = express();
 const PORT = 4477;
 
-let config = { season: 2026, leagueId: '', swid: '', espn_s2: '' };
+let config = {
+  season: process.env.ESPN_SEASON ? parseInt(process.env.ESPN_SEASON, 10) : 2026,
+  leagueId: process.env.ESPN_LEAGUE_ID || '',
+  swid: process.env.ESPN_SWID || '',
+  espn_s2: process.env.ESPN_S2 || '',
+};
 const configPath = path.join(__dirname, 'config.json');
-if (fs.existsSync(configPath)) {
-  config = { ...config, ...JSON.parse(fs.readFileSync(configPath, 'utf8')) };
+const fallbackConfigPath = path.join(__dirname, 'data', 'config.json');
+
+function loadSavedConfig() {
+  try {
+    if (fs.existsSync(configPath) && fs.statSync(configPath).isFile()) {
+      return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    }
+    if (fs.existsSync(fallbackConfigPath) && fs.statSync(fallbackConfigPath).isFile()) {
+      return JSON.parse(fs.readFileSync(fallbackConfigPath, 'utf8'));
+    }
+  } catch (e) {
+    console.error('Error reading saved config:', e.message);
+  }
+  return {};
 }
+
+function persistConfig(newCfg) {
+  try {
+    if (fs.existsSync(configPath) && !fs.statSync(configPath).isDirectory()) {
+      fs.writeFileSync(configPath, JSON.stringify(newCfg, null, 2), 'utf8');
+    } else {
+      const dataDir = path.join(__dirname, 'data');
+      if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+      fs.writeFileSync(fallbackConfigPath, JSON.stringify(newCfg, null, 2), 'utf8');
+    }
+  } catch (e) {
+    console.error('Error persisting config:', e.message);
+  }
+}
+
+config = { ...config, ...loadSavedConfig() };
 
 const formulaPath = path.join(__dirname, 'formula_config.json');
 function getFormulaConfig() {
@@ -289,6 +322,76 @@ app.post('/api/formula/config', (req, res) => {
     res.json({ ok: true, config: merged });
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// --- ESPN League Credentials Configuration & Status ---
+app.get('/api/config/status', (req, res) => {
+  const isConfigured = !!(config.leagueId && config.swid && config.espn_s2);
+  res.json({
+    configured: isConfigured,
+    season: config.season || 2026,
+    leagueId: config.leagueId || '',
+    swidMasked: config.swid ? (config.swid.length > 8 ? `${config.swid.slice(0, 4)}...${config.swid.slice(-4)}` : '****') : '',
+    espnS2Masked: config.espn_s2 ? (config.espn_s2.length > 12 ? `${config.espn_s2.slice(0, 6)}...${config.espn_s2.slice(-6)}` : '****') : '',
+  });
+});
+
+app.post('/api/config', async (req, res) => {
+  try {
+    const { season, leagueId, swid, espn_s2 } = req.body;
+    if (!leagueId || !swid || !espn_s2) {
+      return res.status(400).json({ error: 'League ID, SWID, and espn_s2 are all required.' });
+    }
+
+    const cleanSwid = String(swid).trim();
+    const cleanS2 = String(espn_s2).trim();
+    const cleanLeagueId = String(leagueId).trim();
+    const cleanSeason = season ? parseInt(season, 10) : (config.season || 2026);
+
+    // Validate credentials directly with ESPN API before saving
+    const testUrl = `https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/${cleanSeason}/segments/0/leagues/${cleanLeagueId}?view=mSettings&view=mStatus`;
+    const testRes = await fetch(testUrl, {
+      headers: { Cookie: `SWID=${cleanSwid}; espn_s2=${cleanS2}` },
+    });
+
+    if (!testRes.ok) {
+      if (testRes.status === 401 || testRes.status === 403) {
+        return res.status(401).json({
+          error: 'Authentication failed with ESPN. Please verify that your SWID and espn_s2 cookies are valid and active.',
+        });
+      }
+      if (testRes.status === 404) {
+        return res.status(404).json({
+          error: `League ${cleanLeagueId} not found for season ${cleanSeason}. Please check your League ID.`,
+        });
+      }
+      return res.status(testRes.status).json({
+        error: `ESPN API returned HTTP ${testRes.status}.`,
+      });
+    }
+
+    const testData = await testRes.json();
+    const leagueName = testData.settings?.name || `League ${cleanLeagueId}`;
+
+    config = {
+      season: cleanSeason,
+      leagueId: cleanLeagueId,
+      swid: cleanSwid,
+      espn_s2: cleanS2,
+    };
+
+    persistConfig(config);
+
+    res.json({
+      ok: true,
+      leagueName,
+      season: cleanSeason,
+      leagueId: cleanLeagueId,
+      message: `Successfully connected to ${leagueName}!`,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

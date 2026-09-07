@@ -1,0 +1,26 @@
+services:
+  fantasy-lab:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fantasy-projection-lab
+    restart: unless-stopped
+    ports:
+      - "4477:4477"
+    environment:
+      - PORT=4477
+      - NODE_ENV=production
+      # Optional: Uncomment to configure credentials directly via environment variables
+      # - ESPN_SEASON=2026
+      # - ESPN_LEAGUE_ID=1541192778
+      # - ESPN_SWID={YOUR-SWID-COOKIE}
+      # - ESPN_S2=YOUR-ESPN-S2-COOKIE
+    volumes:
+      # Persistent configuration & history files across container recreation
+      - ./app/config.json:/app/config.json
+      - ./app/formula_config.json:/app/formula_config.json
+      - ./app/learning_history.json:/app/learning_history.json
+      - fantasy-data:/app/data
+
+volumes:
+  fantasy-data:

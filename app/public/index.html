@@ -976,6 +976,9 @@
     <div class="header-controls" style="display:flex; align-items:center; gap:0.75rem;">
       <div style="display:flex; align-items:center; gap:0.55rem;">
         <span id="last-updated-time" style="font-size:0.75rem; color:var(--text-muted); font-family:var(--font-display);">Live: Ready</span>
+        <button id="btn-league-config" class="btn btn-secondary" onclick="openLeagueModal()" style="padding:0.42rem 0.85rem; font-size:0.8rem; display:flex; align-items:center; gap:0.45rem; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); cursor:pointer;" title="Configure ESPN League ID, SWID, and espn_s2">
+          <span>⚙️</span> ESPN Connection
+        </button>
         <button id="btn-global-refresh" class="btn btn-secondary" onclick="triggerGlobalRefresh()" style="padding:0.42rem 0.85rem; font-size:0.8rem; display:flex; align-items:center; gap:0.45rem; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); cursor:pointer;" title="Bypasses cache and pulls real-time updates from ESPN and Kalshi">
           <span id="refresh-icon" style="display:inline-block;">🔄</span> Refresh Live Data
         </button>
@@ -1767,6 +1770,79 @@
   </div>
 </div>
 
+<!-- ESPN League Connection Modal -->
+<div id="connection-modal" class="modal-overlay" onclick="onConnectionModalOverlayClick(event)">
+  <div class="modal-card" style="max-width: 540px;">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:0.6rem;">
+        <span style="font-size:1.4rem;">⚙️</span>
+        <div>
+          <h2 style="font-size:1.25rem; margin-bottom:2px;">ESPN League Connection</h2>
+          <p id="connection-status-sub" style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0;">Configure private league credentials</p>
+        </div>
+      </div>
+      <button class="close-btn" onclick="closeLeagueModal()">×</button>
+    </div>
+
+    <!-- Connection Status Banner -->
+    <div id="connection-banner" style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.75rem 1rem; margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Status</div>
+        <div id="connection-status-text" style="font-weight:700; font-size:0.9rem; color:#34d399;">Checking connection...</div>
+      </div>
+      <div id="connection-badge" class="delta-pill neu" style="font-size:0.75rem;">Verifying</div>
+    </div>
+
+    <form id="league-config-form" onsubmit="onSaveLeagueConfig(event)">
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+        <div>
+          <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--text-muted); margin-bottom:0.35rem; text-transform:uppercase;">Season Year</label>
+          <input id="cfg-season" type="number" value="2026" required style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.6rem 0.75rem; color:#fff; font-size:0.9rem; outline:none;">
+        </div>
+        <div>
+          <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--text-muted); margin-bottom:0.35rem; text-transform:uppercase;">League ID</label>
+          <input id="cfg-league-id" type="text" placeholder="e.g. 19572648" required style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.6rem 0.75rem; color:#fff; font-size:0.9rem; outline:none;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--text-muted); margin-bottom:0.35rem; text-transform:uppercase;">
+          SWID Cookie
+        </label>
+        <input id="cfg-swid" type="text" placeholder="{12345678-ABCD-...}" required style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.6rem 0.75rem; color:#fff; font-size:0.85rem; font-family:monospace; outline:none;">
+        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.25rem;">Includes curly braces: <code>{XXXXXXXX-XXXX-...}</code></div>
+      </div>
+
+      <div style="margin-bottom:1.25rem;">
+        <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--text-muted); margin-bottom:0.35rem; text-transform:uppercase;">
+          espn_s2 Cookie
+        </label>
+        <textarea id="cfg-espn-s2" rows="3" placeholder="AEB... (long token string)" required style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.6rem 0.75rem; color:#fff; font-size:0.8rem; font-family:monospace; outline:none; resize:none;"></textarea>
+        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.25rem;">Long private authentication cookie (200+ characters).</div>
+      </div>
+
+      <!-- Quick Tutorial Dropdown -->
+      <details style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-sm); padding:0.65rem 0.85rem; margin-bottom:1.25rem; font-size:0.78rem; color:var(--text-secondary);">
+        <summary style="cursor:pointer; font-weight:700; color:var(--accent-cyan);">📖 How to find SWID & espn_s2 in 60 seconds</summary>
+        <ol style="margin-top:0.5rem; padding-left:1.2rem; line-height:1.5;">
+          <li>Log in to <a href="https://fantasy.espn.com" target="_blank" style="color:var(--accent-cyan);">fantasy.espn.com</a> in your browser.</li>
+          <li>Right-click anywhere and select <strong>Inspect</strong> (or press <code>F12</code>), then go to the <strong>Application</strong> (or <strong>Storage</strong>) tab.</li>
+          <li>In the left sidebar, expand <strong>Cookies</strong> &rarr; click <code>https://fantasy.espn.com</code>.</li>
+          <li>Find the row for <code>SWID</code> and copy its value (including the curly braces).</li>
+          <li>Find the row for <code>espn_s2</code> and copy its entire string value.</li>
+        </ol>
+      </details>
+
+      <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+        <button type="button" class="btn btn-secondary" onclick="closeLeagueModal()">Cancel</button>
+        <button id="btn-save-league" type="submit" class="btn btn-primary" style="display:flex; align-items:center; gap:0.4rem;">
+          <span id="save-league-spinner" style="display:none;">⏳</span> Test & Save Connection
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div id="toast" class="toast">Formula saved successfully!</div>
 
 <script>
@@ -1784,6 +1860,7 @@ let state = {
 // Initialize app on load
 window.addEventListener('DOMContentLoaded', async () => {
   initWeekSelect();
+  await checkConnectionStatus();
   await loadFormulaConfig();
   await loadMatchups(1);
 });
@@ -2311,6 +2388,104 @@ function closePlayerModal() {
 
 function onModalOverlayClick(e) {
   if (e.target.id === 'player-modal') closePlayerModal();
+}
+
+// ESPN Connection Modal Handlers
+async function checkConnectionStatus() {
+  try {
+    const res = await fetch('/api/config/status');
+    if (!res.ok) return;
+    const data = await res.json();
+    state.configStatus = data;
+
+    const statusEl = document.getElementById('connection-status-text');
+    const badgeEl = document.getElementById('connection-badge');
+    const btnCfg = document.getElementById('btn-league-config');
+
+    if (data.configured) {
+      if (statusEl) statusEl.textContent = `Connected to League ${data.leagueId}`;
+      if (statusEl) statusEl.style.color = '#34d399';
+      if (badgeEl) {
+        badgeEl.textContent = 'Active';
+        badgeEl.className = 'delta-pill pos';
+      }
+      if (btnCfg) btnCfg.innerHTML = '<span>⚙️</span> ESPN Connected';
+    } else {
+      if (statusEl) statusEl.textContent = 'Not Configured';
+      if (statusEl) statusEl.style.color = '#fb7185';
+      if (badgeEl) {
+        badgeEl.textContent = 'Disconnected';
+        badgeEl.className = 'delta-pill neg';
+      }
+      if (btnCfg) btnCfg.innerHTML = '<span style="color:#fb7185;">⚙️ Connect ESPN</span>';
+      openLeagueModal();
+    }
+  } catch (err) {
+    console.error('Config status check failed:', err);
+  }
+}
+
+function openLeagueModal() {
+  const m = document.getElementById('connection-modal');
+  if (!m) return;
+  m.classList.add('active');
+
+  const cs = state.configStatus;
+  if (cs) {
+    if (cs.season) document.getElementById('cfg-season').value = cs.season;
+    if (cs.leagueId) document.getElementById('cfg-league-id').value = cs.leagueId;
+    if (cs.swidMasked && !document.getElementById('cfg-swid').value) {
+      document.getElementById('cfg-swid').placeholder = `Current: ${cs.swidMasked}`;
+    }
+    if (cs.espnS2Masked && !document.getElementById('cfg-espn-s2').value) {
+      document.getElementById('cfg-espn-s2').placeholder = `Current: ${cs.espnS2Masked}`;
+    }
+  }
+}
+
+function closeLeagueModal() {
+  const m = document.getElementById('connection-modal');
+  if (m) m.classList.remove('active');
+}
+
+function onConnectionModalOverlayClick(e) {
+  if (e.target.id === 'connection-modal') closeLeagueModal();
+}
+
+async function onSaveLeagueConfig(e) {
+  e.preventDefault();
+  const spinner = document.getElementById('save-league-spinner');
+  const btn = document.getElementById('btn-save-league');
+  if (spinner) spinner.style.display = 'inline-block';
+  if (btn) btn.disabled = true;
+
+  try {
+    const season = document.getElementById('cfg-season').value;
+    const leagueId = document.getElementById('cfg-league-id').value;
+    const swid = document.getElementById('cfg-swid').value;
+    const espn_s2 = document.getElementById('cfg-espn-s2').value;
+
+    const res = await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ season, leagueId, swid, espn_s2 }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || `HTTP ${res.status}`);
+    }
+
+    showToast(`⚡ Connected to ${data.leagueName}!`);
+    closeLeagueModal();
+    await checkConnectionStatus();
+    await loadMatchups(state.selectedWeek, true);
+  } catch (err) {
+    alert('ESPN Connection Failed: ' + err.message);
+  } finally {
+    if (spinner) spinner.style.display = 'none';
+    if (btn) btn.disabled = false;
+  }
 }
 
 // Formula Config Handlers
