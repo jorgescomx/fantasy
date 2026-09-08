@@ -2,5 +2,7 @@
   "season": 2026,
   "leagueId": "",
   "swid": "",
-  "espn_s2": ""
+  "espn_s2": "",
+  "geminiApiKey": "",
+  "aiModel": "gemini-1.5-flash"
 }

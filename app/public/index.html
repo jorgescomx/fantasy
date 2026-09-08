@@ -959,6 +959,146 @@
     .spinning {
       animation: spin-anim 0.75s linear infinite;
     }
+
+    /* AI Scout & Floating Drawer Styles */
+    .ai-btn-pulse {
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+      animation: pulse-glow 2.5s infinite;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
+      50% { box-shadow: 0 0 25px rgba(6, 182, 212, 0.6); }
+    }
+    .ai-drawer {
+      position: fixed;
+      bottom: 5.5rem;
+      right: 1.5rem;
+      width: 440px;
+      max-width: calc(100vw - 2rem);
+      height: 580px;
+      max-height: calc(100vh - 7rem);
+      background: rgba(13, 18, 30, 0.96);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 35px rgba(99, 102, 241, 0.25);
+      display: none;
+      flex-direction: column;
+      z-index: 950;
+      overflow: hidden;
+      animation: drawer-slide-up 0.25s ease-out;
+    }
+    @keyframes drawer-slide-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .ai-drawer.open {
+      display: flex;
+    }
+    .ai-drawer-header {
+      padding: 0.9rem 1.15rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ai-chat-body {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .ai-chat-bubble {
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.84rem;
+      line-height: 1.5;
+      max-width: 88%;
+      word-break: break-word;
+    }
+    .ai-chat-bubble.user {
+      align-self: flex-end;
+      background: var(--accent-primary);
+      color: #fff;
+      border-bottom-right-radius: 2px;
+    }
+    .ai-chat-bubble.ai {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #f1f5f9;
+      border-bottom-left-radius: 2px;
+    }
+    .ai-chat-bubble.ai strong {
+      color: #38bdf8;
+    }
+    .ai-chat-bubble.ai ul, .ai-chat-bubble.ai ol {
+      margin: 0.4rem 0;
+      padding-left: 1.2rem;
+    }
+    .ai-chat-bubble.ai li {
+      margin-bottom: 0.25rem;
+    }
+    .ai-pills-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .ai-pill-btn {
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      color: #c7d2fe;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.25rem 0.6rem;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .ai-pill-btn:hover {
+      background: rgba(99, 102, 241, 0.25);
+      border-color: var(--accent-primary);
+      color: #fff;
+    }
+    .ai-chat-input-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: rgba(0, 0, 0, 0.35);
+      border-top: 1px solid var(--border-color);
+    }
+    .ai-chat-input-row input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.55rem 0.85rem;
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .ai-chat-input-row input:focus {
+      border-color: var(--accent-primary);
+    }
+    .shimmer-text {
+      background: linear-gradient(90deg, #94a3b8 0%, #ffffff 50%, #94a3b8 100%);
+      background-size: 200% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer-anim 1.8s infinite;
+    }
+    @keyframes shimmer-anim {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
   </style>
 </head>
 <body>
@@ -978,6 +1118,10 @@
         <span id="last-updated-time" style="font-size:0.75rem; color:var(--text-muted); font-family:var(--font-display);">Live: Ready</span>
         <button id="btn-league-config" class="btn btn-secondary" onclick="openLeagueModal()" style="padding:0.42rem 0.85rem; font-size:0.8rem; display:flex; align-items:center; gap:0.45rem; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); cursor:pointer;" title="Configure ESPN League ID, SWID, and espn_s2">
           <span>⚙️</span> ESPN Connection
+        </button>
+        <button id="btn-ai-config" class="btn btn-secondary" onclick="openAiModal()" style="padding:0.42rem 0.85rem; font-size:0.8rem; display:flex; align-items:center; gap:0.45rem; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.3); color:#c7d2fe; cursor:pointer;" title="Configure Google Gemini AI Scout">
+          <span id="ai-status-dot" style="width:8px; height:8px; border-radius:50%; background:#94a3b8; display:inline-block;"></span>
+          <span>✨ AI Scout</span>
         </button>
         <button id="btn-global-refresh" class="btn btn-secondary" onclick="triggerGlobalRefresh()" style="padding:0.42rem 0.85rem; font-size:0.8rem; display:flex; align-items:center; gap:0.45rem; background:rgba(255,255,255,0.04); border:1px solid var(--border-color); cursor:pointer;" title="Bypasses cache and pulls real-time updates from ESPN and Kalshi">
           <span id="refresh-icon" style="display:inline-block;">🔄</span> Refresh Live Data
@@ -1767,6 +1911,23 @@
         <li>High Vegas game total (50.5) boosts red-zone trips to 5.3</li>
       </ul>
     </div>
+
+    <!-- AI Scout Analysis Card -->
+    <div id="modal-ai-scout-card" style="margin-top:1.25rem; padding:1rem; border-radius:var(--radius-md); background:linear-gradient(180deg, rgba(99,102,241,0.08) 0%, rgba(15,23,42,0.6) 100%); border:1px solid rgba(99,102,241,0.25);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem;">
+        <div style="display:flex; align-items:center; gap:0.45rem;">
+          <span style="font-size:1.15rem;">✨</span>
+          <h4 style="font-size:0.9rem; font-weight:700; color:#c7d2fe; margin:0;">AI Scout Intelligence</h4>
+          <span class="kalshi-pill" style="font-size:0.65rem; background:rgba(99,102,241,0.2); color:#a5b4fc; border-color:rgba(99,102,241,0.4);">GEMINI</span>
+        </div>
+        <button id="btn-generate-scout" class="btn btn-secondary" onclick="generatePlayerScoutReport()" style="font-size:0.75rem; padding:0.25rem 0.65rem; display:flex; align-items:center; gap:0.35rem; border-color:rgba(99,102,241,0.4); color:#e0e7ff; background:rgba(99,102,241,0.15); cursor:pointer;">
+          <span id="scout-btn-icon">⚡</span> <span id="scout-btn-text">Generate Scout Report</span>
+        </button>
+      </div>
+      <div id="modal-ai-scout-content" style="font-size:0.82rem; color:var(--text-secondary); line-height:1.55;">
+        Click <strong>"Generate Scout Report"</strong> to ask Google Gemini for a deep-dive breakdown of this player's matchup, Kalshi signals, and start/sit verdict.
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1843,6 +2004,113 @@
   </div>
 </div>
 
+<!-- Gemini AI Connection Modal -->
+<div id="ai-modal" class="modal-overlay" onclick="onAiModalOverlayClick(event)">
+  <div class="modal-card" style="max-width: 540px;">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:0.6rem;">
+        <span style="font-size:1.4rem;">✨</span>
+        <div>
+          <h2 style="font-size:1.25rem; margin-bottom:2px;">Google Gemini AI Scout</h2>
+          <p id="ai-status-sub" style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0;">Configure free Google AI Studio key</p>
+        </div>
+      </div>
+      <button class="close-btn" onclick="closeAiModal()">×</button>
+    </div>
+
+    <!-- Connection Status Banner -->
+    <div id="ai-banner" style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.75rem 1rem; margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Status</div>
+        <div id="ai-status-text" style="font-weight:700; font-size:0.9rem; color:#94a3b8;">Checking connection...</div>
+      </div>
+      <div id="ai-badge" class="delta-pill neu" style="font-size:0.75rem;">Not Configured</div>
+    </div>
+
+    <form id="ai-config-form" onsubmit="onSaveAiConfig(event)">
+      <div style="margin-bottom:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+          <label style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">
+            Gemini API Key
+          </label>
+          <a href="#" onclick="toggleAiKeyVisibility(event)" id="ai-key-toggle-link" style="font-size:0.72rem; color:var(--accent-cyan); text-decoration:none;">Show Key</a>
+        </div>
+        <input id="cfg-gemini-key" type="password" placeholder="AIzaSy... (paste your key here)" required style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.6rem 0.75rem; color:#fff; font-size:0.85rem; font-family:monospace; outline:none;">
+        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.25rem;">Free key from Google AI Studio. Stored securely in your config.</div>
+      </div>
+
+      <div style="margin-bottom:1.25rem;">
+        <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--text-muted); margin-bottom:0.35rem; text-transform:uppercase;">
+          Model Selection
+        </label>
+        <select id="cfg-gemini-model" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.6rem 0.75rem; color:#fff; font-size:0.85rem; outline:none;">
+          <option value="gemini-1.5-flash">gemini-1.5-flash (Recommended: Free, sub-second latency)</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash (High speed)</option>
+          <option value="gemini-1.5-pro">gemini-1.5-pro (In-depth reasoning)</option>
+        </select>
+      </div>
+
+      <!-- Quick Tutorial Details -->
+      <details style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-sm); padding:0.65rem 0.85rem; margin-bottom:1.25rem; font-size:0.78rem; color:var(--text-secondary);" open>
+        <summary style="cursor:pointer; font-weight:700; color:var(--accent-cyan);">💡 How to get your free Gemini API key in 30 seconds</summary>
+        <ol style="margin-top:0.5rem; padding-left:1.2rem; line-height:1.5;">
+          <li>Sign in with your Google account at <a href="https://aistudio.google.com" target="_blank" style="color:var(--accent-cyan); text-decoration:underline;">aistudio.google.com</a>.</li>
+          <li>Click the blue <strong>"Get API key"</strong> button in the left sidebar.</li>
+          <li>Click <strong>"Create API key"</strong> and copy your key.</li>
+          <li>Paste it above and click <strong>Test & Save Key</strong>. (No credit card required!)</li>
+        </ol>
+      </details>
+
+      <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+        <button type="button" class="btn btn-secondary" onclick="closeAiModal()">Cancel</button>
+        <button id="btn-save-ai" type="submit" class="btn btn-primary" style="display:flex; align-items:center; gap:0.4rem; background:linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));">
+          <span id="save-ai-spinner" style="display:none;">⏳</span> Test & Save Key
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Floating AI Scout Button -->
+<button id="floating-ai-btn" onclick="toggleAiDrawer()" style="position:fixed; bottom:1.5rem; right:1.5rem; z-index:900; background:linear-gradient(135deg, #6366f1, #06b6d4); color:#fff; border:none; border-radius:30px; padding:0.65rem 1.15rem; font-family:var(--font-display); font-weight:700; font-size:0.9rem; display:flex; align-items:center; gap:0.5rem; box-shadow:0 10px 25px -5px rgba(99, 102, 241, 0.5), 0 0 20px rgba(6, 182, 212, 0.3); cursor:pointer; transition:all 0.2s ease;">
+  <span style="font-size:1.15rem;">💬</span>
+  <span>Ask AI Scout</span>
+</button>
+
+<!-- AI Scout Chat Drawer -->
+<div id="ai-drawer" class="ai-drawer">
+  <div class="ai-drawer-header">
+    <div style="display:flex; align-items:center; gap:0.55rem;">
+      <span style="font-size:1.2rem;">✨</span>
+      <div>
+        <div style="font-family:var(--font-display); font-weight:700; font-size:0.95rem; color:#fff;">AI Bench Coach & Scout</div>
+        <div style="font-size:0.72rem; color:var(--text-secondary);">Powered by Google Gemini</div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:0.4rem;">
+      <button onclick="openAiModal()" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:0.85rem; padding:0.2rem 0.4rem;" title="AI Settings">⚙️</button>
+      <button class="close-btn" onclick="closeAiDrawer()" style="font-size:1.1rem; line-height:1; width:28px; height:28px;">×</button>
+    </div>
+  </div>
+
+  <div id="ai-chat-messages" class="ai-chat-body">
+    <!-- Chat bubbles rendered here -->
+  </div>
+
+  <!-- Quick Prompts Pills -->
+  <div class="ai-pills-row">
+    <button class="ai-pill-btn" onclick="sendAiQuickPrompt('Who should I start in my FLEX spot this week?')">🎯 Start / Sit FLEX</button>
+    <button class="ai-pill-btn" onclick="sendAiQuickPrompt('Who on my bench has the highest ceiling?')">⚡ Highest Bench Ceiling</button>
+    <button class="ai-pill-btn" onclick="sendAiQuickPrompt('Analyze my matchup and winning probability vs my opponent.')">⚔️ Matchup Advantage</button>
+    <button class="ai-pill-btn" onclick="sendAiQuickPrompt('Who are the top waiver wire targets for my roster weaknesses?')">🔥 Top Waivers</button>
+  </div>
+
+  <div class="ai-chat-input-row">
+    <input id="ai-chat-input" type="text" placeholder="Ask about your lineup, players, matchups..." onkeydown="if(event.key === 'Enter') sendAiChatMessage()">
+    <button onclick="sendAiChatMessage()" class="btn btn-primary" style="padding:0.5rem 0.85rem; font-size:0.85rem;">Send</button>
+  </div>
+</div>
+
 <div id="toast" class="toast">Formula saved successfully!</div>
 
 <script>
@@ -1854,13 +2122,18 @@ let state = {
   formulaConfig: null,
   allPlayersList: [],
   waiverData: null,
-  activeFAPos: 'ALL'
+  activeFAPos: 'ALL',
+  aiStatus: null,
+  aiScoutCache: {},
+  chatHistory: [],
+  activeModalPlayer: null
 };
 
 // Initialize app on load
 window.addEventListener('DOMContentLoaded', async () => {
   initWeekSelect();
   await checkConnectionStatus();
+  await checkAiStatus();
   await loadFormulaConfig();
   await loadMatchups(1);
 });
@@ -2378,6 +2651,9 @@ function openPlayerModal(playerName) {
   rationaleEl.innerHTML = (b.rationale || ['Standard baseline projection alignment.'])
     .map(r => `<li>${escapeHtml(r)}</li>`)
     .join('');
+
+  state.activeModalPlayer = player;
+  resetModalAiScout(player);
 
   document.getElementById('player-modal').classList.add('active');
 }
@@ -3064,6 +3340,320 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+// --- Google Gemini AI Scout Client Integration ---
+function renderMarkdown(md) {
+  if (!md) return '';
+  let html = escapeHtml(md);
+  
+  // Headers: ### Head, ## Head, # Head
+  html = html.replace(/^### (.*$)/gim, '<h5 style="font-size:0.86rem; font-weight:700; color:#38bdf8; margin:0.6rem 0 0.25rem;">$1</h5>');
+  html = html.replace(/^## (.*$)/gim, '<h4 style="font-size:0.92rem; font-weight:800; color:#c7d2fe; margin:0.75rem 0 0.3rem;">$1</h4>');
+  html = html.replace(/^# (.*$)/gim, '<h3 style="font-size:1rem; font-weight:800; color:#fff; margin:0.85rem 0 0.35rem;">$1</h3>');
+
+  // Bold: **text**
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#e0e7ff;">$1</strong>');
+  
+  // Italic: *text*
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+  // Unordered list items: - item or * item
+  html = html.replace(/^\s*[-*]\s+(.*)$/gim, '<li style="margin-left:1.2rem; margin-bottom:0.25rem;">$1</li>');
+  
+  // Contiguous list wrapper
+  html = html.replace(/((?:<li[^>]*>.*?<\/li>\s*)+)/gim, '<ul style="margin:0.4rem 0; padding:0; list-style-type:disc;">$1</ul>');
+
+  // Line breaks
+  html = html.replace(/\n\n+/g, '<div style="height:0.55rem;"></div>');
+  html = html.replace(/\n/g, '<br>');
+
+  return html;
+}
+
+async function checkAiStatus() {
+  try {
+    const res = await fetch('/api/ai/status');
+    if (!res.ok) return;
+    const data = await res.json();
+    state.aiStatus = data;
+
+    const statusEl = document.getElementById('ai-status-text');
+    const badgeEl = document.getElementById('ai-badge');
+    const btnAi = document.getElementById('btn-ai-config');
+    const dotEl = document.getElementById('ai-status-dot');
+
+    if (data.configured) {
+      if (statusEl) statusEl.textContent = `Connected (${data.model})`;
+      if (statusEl) statusEl.style.color = '#34d399';
+      if (badgeEl) {
+        badgeEl.textContent = 'Ready';
+        badgeEl.className = 'delta-pill pos';
+      }
+      if (dotEl) dotEl.style.background = '#34d399';
+      if (btnAi) {
+        btnAi.title = `Gemini AI Scout Active (${data.model})`;
+        btnAi.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+        btnAi.style.background = 'rgba(16, 185, 129, 0.1)';
+        btnAi.style.color = '#a7f3d0';
+      }
+    } else {
+      if (statusEl) statusEl.textContent = 'Not Configured';
+      if (statusEl) statusEl.style.color = '#94a3b8';
+      if (badgeEl) {
+        badgeEl.textContent = 'Setup Required';
+        badgeEl.className = 'delta-pill neu';
+      }
+      if (dotEl) dotEl.style.background = '#94a3b8';
+      if (btnAi) {
+        btnAi.title = 'Configure Google Gemini API Key (Free)';
+        btnAi.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+        btnAi.style.background = 'rgba(99, 102, 241, 0.08)';
+        btnAi.style.color = '#c7d2fe';
+      }
+    }
+  } catch (err) {
+    console.error('AI status check failed:', err);
+  }
+}
+
+function openAiModal() {
+  const m = document.getElementById('ai-modal');
+  if (!m) return;
+  m.classList.add('active');
+
+  const s = state.aiStatus;
+  if (s) {
+    if (s.maskedKey && !document.getElementById('cfg-gemini-key').value) {
+      document.getElementById('cfg-gemini-key').placeholder = `Current: ${s.maskedKey}`;
+    }
+    if (s.model) {
+      document.getElementById('cfg-gemini-model').value = s.model;
+    }
+  }
+}
+
+function closeAiModal() {
+  const m = document.getElementById('ai-modal');
+  if (m) m.classList.remove('active');
+}
+
+function onAiModalOverlayClick(e) {
+  if (e.target.id === 'ai-modal') closeAiModal();
+}
+
+function toggleAiKeyVisibility(e) {
+  if (e) e.preventDefault();
+  const input = document.getElementById('cfg-gemini-key');
+  const link = document.getElementById('ai-key-toggle-link');
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (link) link.textContent = 'Hide Key';
+  } else {
+    input.type = 'password';
+    if (link) link.textContent = 'Show Key';
+  }
+}
+
+async function onSaveAiConfig(e) {
+  if (e) e.preventDefault();
+  const keyInput = document.getElementById('cfg-gemini-key');
+  const modelSelect = document.getElementById('cfg-gemini-model');
+  const spinner = document.getElementById('save-ai-spinner');
+  const saveBtn = document.getElementById('btn-save-ai');
+
+  const rawKey = keyInput.value.trim();
+  const model = modelSelect ? modelSelect.value : 'gemini-1.5-flash';
+
+  if (!rawKey) {
+    showToast('Please enter your Gemini API Key.');
+    return;
+  }
+
+  saveBtn.disabled = true;
+  if (spinner) spinner.style.display = 'inline-block';
+
+  try {
+    const res = await fetch('/api/ai/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ geminiApiKey: rawKey, model }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to save Gemini key.');
+
+    showToast('✨ Gemini AI connected successfully!');
+    keyInput.value = '';
+    await checkAiStatus();
+    closeAiModal();
+  } catch (err) {
+    alert(`Gemini validation error:\n${err.message}`);
+  } finally {
+    saveBtn.disabled = false;
+    if (spinner) spinner.style.display = 'none';
+  }
+}
+
+function resetModalAiScout(player) {
+  const contentEl = document.getElementById('modal-ai-scout-content');
+  const btn = document.getElementById('btn-generate-scout');
+  const btnIcon = document.getElementById('scout-btn-icon');
+  const btnText = document.getElementById('scout-btn-text');
+
+  if (!contentEl) return;
+  const cacheKey = `${player.name}_${state.selectedWeek || 1}`;
+
+  if (state.aiScoutCache && state.aiScoutCache[cacheKey]) {
+    contentEl.innerHTML = renderMarkdown(state.aiScoutCache[cacheKey]);
+    if (btnText) btnText.textContent = 'Regenerate';
+    if (btnIcon) btnIcon.textContent = '🔄';
+  } else {
+    contentEl.innerHTML = 'Click <strong>"Generate Scout Report"</strong> to ask Google Gemini for a deep-dive breakdown of this player\'s matchup, Kalshi signals, and start/sit verdict.';
+    if (btnText) btnText.textContent = 'Generate Scout Report';
+    if (btnIcon) btnIcon.textContent = '⚡';
+  }
+}
+
+async function generatePlayerScoutReport() {
+  const player = state.activeModalPlayer;
+  if (!player) return;
+
+  if (!state.aiStatus || !state.aiStatus.configured) {
+    showToast('Please configure your Google Gemini API Key first!');
+    openAiModal();
+    return;
+  }
+
+  const btn = document.getElementById('btn-generate-scout');
+  const btnIcon = document.getElementById('scout-btn-icon');
+  const btnText = document.getElementById('scout-btn-text');
+  const contentEl = document.getElementById('modal-ai-scout-content');
+
+  btn.disabled = true;
+  if (btnIcon) btnIcon.textContent = '⏳';
+  if (btnText) btnText.textContent = 'Scouting...';
+  contentEl.innerHTML = '<div class="shimmer-text" style="font-size:0.84rem; padding:0.4rem 0;">⚡ Consulting Google Gemini... analyzing matchup DVOA, Kalshi implied props, and projection delta...</div>';
+
+  try {
+    const res = await fetch('/api/ai/explain-player', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to generate scout report');
+
+    const cacheKey = `${player.name}_${state.selectedWeek || 1}`;
+    state.aiScoutCache[cacheKey] = data.explanation;
+
+    contentEl.innerHTML = renderMarkdown(data.explanation);
+    if (btnText) btnText.textContent = 'Regenerate';
+    if (btnIcon) btnIcon.textContent = '🔄';
+  } catch (err) {
+    contentEl.innerHTML = `<span style="color:#fb7185;">⚠️ Error generating scout report: ${escapeHtml(err.message)}</span>`;
+    if (btnText) btnText.textContent = 'Retry';
+    if (btnIcon) btnIcon.textContent = '⚡';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function toggleAiDrawer() {
+  const drawer = document.getElementById('ai-drawer');
+  if (!drawer) return;
+  drawer.classList.toggle('open');
+  if (drawer.classList.contains('open')) {
+    const messagesEl = document.getElementById('ai-chat-messages');
+    if (messagesEl && messagesEl.children.length === 0) {
+      appendAiChatMessage('ai', `👋 **Hello! I'm your AI Bench Coach & Fantasy GM**, powered by Google Gemini.\n\nI have live visibility into your **Week ${state.selectedWeek || 1}** matchups, rosters, Kalshi prediction markets, and projection calculations.\n\nAsk me anything or tap one of the quick options below!`);
+    }
+    const input = document.getElementById('ai-chat-input');
+    if (input) setTimeout(() => input.focus(), 150);
+  }
+}
+
+function closeAiDrawer() {
+  const drawer = document.getElementById('ai-drawer');
+  if (drawer) drawer.classList.remove('open');
+}
+
+function appendAiChatMessage(role, text) {
+  const messagesEl = document.getElementById('ai-chat-messages');
+  if (!messagesEl) return;
+  const bubble = document.createElement('div');
+  bubble.className = `ai-chat-bubble ${role}`;
+  bubble.innerHTML = renderMarkdown(text);
+  messagesEl.appendChild(bubble);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function sendAiQuickPrompt(promptText) {
+  const input = document.getElementById('ai-chat-input');
+  if (input) input.value = promptText;
+  sendAiChatMessage();
+}
+
+async function sendAiChatMessage() {
+  const input = document.getElementById('ai-chat-input');
+  if (!input) return;
+  const message = input.value.trim();
+  if (!message) return;
+
+  if (!state.aiStatus || !state.aiStatus.configured) {
+    showToast('Please configure your Google Gemini API Key first!');
+    openAiModal();
+    return;
+  }
+
+  input.value = '';
+  appendAiChatMessage('user', message);
+  state.chatHistory.push({ role: 'user', text: message });
+
+  const messagesEl = document.getElementById('ai-chat-messages');
+  const loadingBubble = document.createElement('div');
+  loadingBubble.className = 'ai-chat-bubble ai';
+  loadingBubble.id = 'ai-temp-loading';
+  loadingBubble.innerHTML = '<span class="shimmer-text">⚡ Bench Coach is analyzing matchups and projections...</span>';
+  messagesEl.appendChild(loadingBubble);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  const currentMatchup = (state.matchups || [])[state.selectedMatchupIndex || 0] || {};
+  const contextData = {
+    week: state.selectedWeek || 1,
+    matchup: {
+      awayTeam: currentMatchup.away?.team,
+      awayProjected: currentMatchup.away?.totalProj,
+      homeTeam: currentMatchup.home?.team,
+      homeProjected: currentMatchup.home?.totalProj,
+      startersSummary: (currentMatchup.away?.roster || []).slice(0, 9).map(p => `${p.pos}: ${p.name} (Proj ${p.ourProj || p.espnProj}) vs ${(currentMatchup.home?.roster || []).slice(0, 9).map(o => `${o.pos}: ${o.name}`).join(', ')}`),
+    },
+    topWaivers: (state.waiverData?.freeAgents || []).slice(0, 5).map(w => `${w.pos} ${w.name} (+${w.delta || 0} Δ)`),
+  };
+
+  try {
+    const res = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        chatHistory: state.chatHistory.slice(-8),
+        contextData,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to get answer');
+
+    const temp = document.getElementById('ai-temp-loading');
+    if (temp) temp.remove();
+
+    appendAiChatMessage('ai', data.reply);
+    state.chatHistory.push({ role: 'model', text: data.reply });
+  } catch (err) {
+    const temp = document.getElementById('ai-temp-loading');
+    if (temp) temp.remove();
+    appendAiChatMessage('ai', `⚠️ **Error**: ${escapeHtml(err.message)}`);
+  }
 }
 </script>
 </body>

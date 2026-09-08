@@ -18,6 +18,8 @@ services:
       # - ESPN_LEAGUE_ID=1541192778
       # - ESPN_SWID={YOUR-SWID-COOKIE}
       # - ESPN_S2=YOUR-ESPN-S2-COOKIE
+      # Optional: Google Gemini API key for AI Scout & Chat (free at aistudio.google.com)
+      # - GEMINI_API_KEY=AIzaSy...
     volumes:
       # Persistent configuration & history files across container recreation
       - ./app/config.json:/app/config.json

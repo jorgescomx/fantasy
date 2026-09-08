@@ -4,6 +4,7 @@ const path = require('path');
 const { projectPlayer } = require('./projectionEngine');
 const { fetchKalshiNFLMarkets } = require('./kalshiService');
 const { analyzeWeekPerformance } = require('./learningEngine');
+const { testGeminiKey, explainPlayerProjection, askScoutChat, DEFAULT_MODEL } = require('./aiService');
 
 const app = express();
 const PORT = 4477;
@@ -13,6 +14,8 @@ let config = {
   leagueId: process.env.ESPN_LEAGUE_ID || '',
   swid: process.env.ESPN_SWID || '',
   espn_s2: process.env.ESPN_S2 || '',
+  geminiApiKey: process.env.GEMINI_API_KEY || '',
+  aiModel: process.env.GEMINI_MODEL || DEFAULT_MODEL,
 };
 const configPath = path.join(__dirname, 'config.json');
 const fallbackConfigPath = path.join(__dirname, 'data', 'config.json');
@@ -414,6 +417,7 @@ app.post('/api/config', async (req, res) => {
     const leagueName = testData.settings?.name || `League ${cleanLeagueId}`;
 
     config = {
+      ...config,
       season: cleanSeason,
       leagueId: cleanLeagueId,
       swid: cleanSwid,
@@ -430,6 +434,111 @@ app.post('/api/config', async (req, res) => {
       message: `Successfully connected to ${leagueName}!`,
     });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Google Gemini AI Scout Endpoints ---
+app.get('/api/ai/status', (req, res) => {
+  const apiKey = config.geminiApiKey || process.env.GEMINI_API_KEY || '';
+  const isConfigured = !!(apiKey && apiKey.trim());
+  const maskedKey = isConfigured
+    ? (apiKey.length > 8 ? `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}` : '****')
+    : '';
+  res.json({
+    configured: isConfigured,
+    maskedKey,
+    model: config.aiModel || DEFAULT_MODEL,
+  });
+});
+
+app.post('/api/ai/config', async (req, res) => {
+  try {
+    const { geminiApiKey, model } = req.body || {};
+    if (!geminiApiKey || !geminiApiKey.trim()) {
+      return res.status(400).json({ error: 'Gemini API key is required.' });
+    }
+    const cleanKey = geminiApiKey.trim();
+    const cleanModel = model ? model.trim() : (config.aiModel || DEFAULT_MODEL);
+
+    // Test key connectivity first
+    const testResult = await testGeminiKey(cleanKey, cleanModel);
+    if (!testResult.ok) {
+      return res.status(400).json({ error: testResult.error || 'Failed to validate API key with Google Gemini.' });
+    }
+
+    config = {
+      ...config,
+      geminiApiKey: cleanKey,
+      aiModel: cleanModel,
+    };
+    persistConfig(config);
+
+    res.json({
+      ok: true,
+      message: 'Google Gemini API key validated and saved successfully!',
+      model: cleanModel,
+      maskedKey: `${cleanKey.slice(0, 4)}...${cleanKey.slice(-4)}`,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/ai/explain-player', async (req, res) => {
+  try {
+    const apiKey = config.geminiApiKey || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(400).json({
+        error: 'Google Gemini API key is not configured. Click "✨ AI Scout" in the top bar to set it up for free.',
+      });
+    }
+
+    const { player } = req.body || {};
+    if (!player || !player.name) {
+      return res.status(400).json({ error: 'Player data is required.' });
+    }
+
+    const formulaConfig = getFormulaConfig();
+    const explanation = await explainPlayerProjection({
+      player,
+      formulaConfig,
+      apiKey,
+      model: config.aiModel || DEFAULT_MODEL,
+    });
+
+    res.json({ ok: true, explanation });
+  } catch (err) {
+    console.error('Explain player error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/ai/chat', async (req, res) => {
+  try {
+    const apiKey = config.geminiApiKey || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(400).json({
+        error: 'Google Gemini API key is not configured. Click "✨ AI Scout" in the top bar to set it up for free.',
+      });
+    }
+
+    const { message, chatHistory, contextData } = req.body || {};
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Message is required.' });
+    }
+
+    const reply = await askScoutChat({
+      message: message.trim(),
+      chatHistory: chatHistory || [],
+      contextData: contextData || {},
+      apiKey,
+      model: config.aiModel || DEFAULT_MODEL,
+    });
+
+    res.json({ ok: true, reply });
+  } catch (err) {
+    console.error('AI chat error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
