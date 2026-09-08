@@ -97,6 +97,13 @@ async function testGeminiKey(apiKey, model = DEFAULT_MODEL) {
   }
 
   const cleanKey = apiKey.trim();
+  if (cleanKey.startsWith('AQ.') || cleanKey.startsWith('4/0AQ') || cleanKey.startsWith('ya29.')) {
+    return {
+      ok: false,
+      error: `The entered token starts with "${cleanKey.slice(0, 5)}", which is an OAuth session code, not an API key. Google Gemini API keys from Google AI Studio start with "AIzaSy...". Please visit https://aistudio.google.com/app/apikey to create an API key.`,
+    };
+  }
+
   let activeModel = model || DEFAULT_MODEL;
 
   try {

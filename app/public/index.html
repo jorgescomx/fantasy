@@ -2027,6 +2027,9 @@
       <div id="ai-badge" class="delta-pill neu" style="font-size:0.75rem;">Not Configured</div>
     </div>
 
+    <!-- Inline Error Box -->
+    <div id="ai-error-box" style="display:none; margin-bottom:1.15rem; padding:0.75rem 1rem; border-radius:var(--radius-sm); background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); color:#fca5a5; font-size:0.8rem; line-height:1.45;"></div>
+
     <form id="ai-config-form" onsubmit="onSaveAiConfig(event)">
       <div style="margin-bottom:1rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
@@ -3420,10 +3423,22 @@ async function checkAiStatus() {
 
 let aiKeyDebounce = null;
 function onAiKeyInput() {
+  const errBox = document.getElementById('ai-error-box');
+  const key = (document.getElementById('cfg-gemini-key').value || '').trim();
+
+  if (key.startsWith('AQ.') || key.startsWith('4/0AQ') || key.startsWith('ya29.')) {
+    if (errBox) {
+      errBox.style.display = 'block';
+      errBox.innerHTML = `⚠️ <strong>OAuth Token Detected:</strong> The key you entered starts with <code>${escapeHtml(key.slice(0, 5))}</code>. This is an OAuth session/login code, not a Gemini API key.<br><br>👉 Please visit <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#38bdf8; text-decoration:underline; font-weight:700;">Google AI Studio API Keys</a>, click <strong>"Create API key"</strong>, and copy the key that starts with <code>AIzaSy...</code>.`;
+    }
+    return;
+  } else if (errBox && errBox.style.display === 'block' && !errBox.dataset.isSubmitError) {
+    errBox.style.display = 'none';
+  }
+
   clearTimeout(aiKeyDebounce);
   aiKeyDebounce = setTimeout(() => {
-    const key = (document.getElementById('cfg-gemini-key').value || '').trim();
-    if (key.length >= 20) {
+    if (key.length >= 20 && key.startsWith('AIza')) {
       loadAiModels(key);
     }
   }, 400);
@@ -3452,6 +3467,12 @@ function openAiModal() {
   const m = document.getElementById('ai-modal');
   if (!m) return;
   m.classList.add('active');
+
+  const errBox = document.getElementById('ai-error-box');
+  if (errBox) {
+    errBox.style.display = 'none';
+    delete errBox.dataset.isSubmitError;
+  }
 
   const s = state.aiStatus;
   if (s) {
@@ -3494,6 +3515,12 @@ async function onSaveAiConfig(e) {
   const modelSelect = document.getElementById('cfg-gemini-model');
   const spinner = document.getElementById('save-ai-spinner');
   const saveBtn = document.getElementById('btn-save-ai');
+  const errBox = document.getElementById('ai-error-box');
+
+  if (errBox) {
+    errBox.style.display = 'none';
+    delete errBox.dataset.isSubmitError;
+  }
 
   const rawKey = keyInput.value.trim();
   const model = modelSelect ? modelSelect.value : 'gemini-3.5-flash';
@@ -3520,7 +3547,13 @@ async function onSaveAiConfig(e) {
     await checkAiStatus();
     closeAiModal();
   } catch (err) {
-    alert(`Gemini validation error:\n${err.message}`);
+    if (errBox) {
+      errBox.style.display = 'block';
+      errBox.dataset.isSubmitError = 'true';
+      errBox.innerHTML = `⚠️ <strong>Connection Error:</strong> ${escapeHtml(err.message)}`;
+    } else {
+      alert(`Gemini validation error:\n${err.message}`);
+    }
   } finally {
     saveBtn.disabled = false;
     if (spinner) spinner.style.display = 'none';
