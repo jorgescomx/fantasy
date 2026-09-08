@@ -3426,22 +3426,16 @@ function onAiKeyInput() {
   const errBox = document.getElementById('ai-error-box');
   const key = (document.getElementById('cfg-gemini-key').value || '').trim();
 
-  if (key.startsWith('AQ.') || key.startsWith('4/0AQ') || key.startsWith('ya29.')) {
-    if (errBox) {
-      errBox.style.display = 'block';
-      errBox.innerHTML = `⚠️ <strong>OAuth Token Detected:</strong> The key you entered starts with <code>${escapeHtml(key.slice(0, 5))}</code>. This is an OAuth session/login code, not a Gemini API key.<br><br>👉 Please visit <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#38bdf8; text-decoration:underline; font-weight:700;">Google AI Studio API Keys</a>, click <strong>"Create API key"</strong>, and copy the key that starts with <code>AIzaSy...</code>.`;
-    }
-    return;
-  } else if (errBox && errBox.style.display === 'block' && !errBox.dataset.isSubmitError) {
+  if (errBox && errBox.style.display === 'block' && !errBox.dataset.isSubmitError) {
     errBox.style.display = 'none';
   }
 
   clearTimeout(aiKeyDebounce);
   aiKeyDebounce = setTimeout(() => {
-    if (key.length >= 20 && key.startsWith('AIza')) {
+    if (key.length >= 15) {
       loadAiModels(key);
     }
-  }, 400);
+  }, 350);
 }
 
 async function loadAiModels(key) {
