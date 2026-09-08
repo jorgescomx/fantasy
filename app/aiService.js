@@ -62,10 +62,21 @@ async function callGemini({ apiKey, model = DEFAULT_MODEL, contents, systemInstr
   const data = await res.json();
   const candidate = data.candidates?.[0];
   if (!candidate || !candidate.content?.parts?.length) {
+    if (candidate?.finishReason === 'MAX_TOKENS') {
+      throw new Error('Gemini exceeded token limit during its thinking phase. Please try again.');
+    }
     throw new Error('Gemini returned an empty response. Please try again.');
   }
 
-  return candidate.content.parts.map((p) => p.text).join('\n');
+  const textParts = (candidate.content.parts || [])
+    .map((p) => p.text)
+    .filter((t) => typeof t === 'string' && t.trim().length > 0);
+
+  if (!textParts.length) {
+    throw new Error('Gemini returned an empty response. Please try again.');
+  }
+
+  return textParts.join('\n');
 }
 
 /**
@@ -89,7 +100,26 @@ async function listAvailableModels(apiKey) {
         displayName: m.displayName || m.name.replace(/^models\//, ''),
         description: m.description || '',
       }))
-      .filter((m) => !m.id.includes('deprecated') && !m.id.includes('legacy') && !m.id.includes('1.5'));
+      .filter((m) => {
+        const id = m.id.toLowerCase();
+        return (
+          !id.includes('deprecated') &&
+          !id.includes('legacy') &&
+          !id.includes('1.5') &&
+          !id.includes('2.5-flash') &&
+          !id.includes('image') &&
+          !id.includes('audio') &&
+          !id.includes('tts') &&
+          !id.includes('transcribe') &&
+          !id.includes('embedding') &&
+          !id.includes('veo') &&
+          !id.includes('lyria') &&
+          !id.includes('robotics') &&
+          !id.includes('banana') &&
+          !id.includes('customtools') &&
+          !id.includes('live')
+        );
+      });
   } catch (_) {
     return [];
   }
@@ -107,11 +137,13 @@ async function testGeminiKey(apiKey, model = DEFAULT_MODEL) {
   let activeModel = model || DEFAULT_MODEL;
 
   try {
+    // Thinking models (Gemini 3.x) spend ~60-100 tokens thinking before generating text,
+    // so token budget must be at least 350 to avoid MAX_TOKENS truncation.
     const text = await callGemini({
       apiKey: cleanKey,
       model: activeModel,
-      contents: [{ role: 'user', parts: [{ text: 'Respond with the single word: "READY"' }] }],
-      maxTokens: 10,
+      contents: [{ role: 'user', parts: [{ text: 'Respond with the single word: READY' }] }],
+      maxTokens: 350,
       temperature: 0.1,
     });
     return { ok: true, model: activeModel, preview: text.trim() };
@@ -178,7 +210,7 @@ Please generate a high-conviction AI Scout Breakdown. Format with bold headings 
     systemInstruction,
     contents: [{ role: 'user', parts: [{ text: contextPrompt }] }],
     temperature: 0.35,
-    maxTokens: 650,
+    maxTokens: 1200,
   });
 }
 
@@ -221,7 +253,7 @@ Guidelines:
     systemInstruction,
     contents,
     temperature: 0.45,
-    maxTokens: 850,
+    maxTokens: 1500,
   });
 }
 
