@@ -3679,17 +3679,66 @@ async function sendAiChatMessage() {
   messagesEl.appendChild(loadingBubble);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 
-  const currentMatchup = (state.matchups || [])[state.selectedMatchupIndex || 0] || {};
+  // Ensure waiver data is loaded if null
+  if (!state.waiverData) {
+    try {
+      const wRes = await fetch(`/api/espn/waiver-advisor?week=${state.selectedWeek || 1}`);
+      if (wRes.ok) state.waiverData = await wRes.json();
+    } catch (_) {}
+  }
+
+  // Identify user's matchup (mine === true) or fallback to currently selected
+  const myMatchup = (state.matchups || []).find(m => m.away?.mine || m.home?.mine) 
+    || (state.matchups || [])[state.selectedMatchupIndex || 0] 
+    || {};
+
+  const myTeam = myMatchup.away?.mine ? myMatchup.away : (myMatchup.home?.mine ? myMatchup.home : (myMatchup.away || {}));
+  const oppTeam = myMatchup.away?.mine ? myMatchup.home : (myMatchup.home?.mine ? myMatchup.away : (myMatchup.home || {}));
+
+  const formatPlayer = (p) => ({
+    name: p.name,
+    slot: p.slot || p.pos,
+    pos: p.pos,
+    nflTeam: p.nflTeam,
+    oppTeam: p.oppTeam,
+    modelProj: p.ourProj,
+    espnProj: p.espnProj,
+    delta: p.delta,
+    range: p.range ? `${p.range.floor} - ${p.range.ceiling}` : undefined,
+    injuryStatus: p.injuryStatus || 'HEALTHY',
+    momentum: p.momentum ? `${p.momentum.status}: ${p.momentum.reason}` : 'NEUTRAL',
+    hasKalshiSignal: !!p.hasKalshiSignal,
+  });
+
   const contextData = {
     week: state.selectedWeek || 1,
-    matchup: {
-      awayTeam: currentMatchup.away?.team,
-      awayProjected: currentMatchup.away?.totalProj,
-      homeTeam: currentMatchup.home?.team,
-      homeProjected: currentMatchup.home?.totalProj,
-      startersSummary: (currentMatchup.away?.roster || []).slice(0, 9).map(p => `${p.pos}: ${p.name} (Proj ${p.ourProj || p.espnProj}) vs ${(currentMatchup.home?.roster || []).slice(0, 9).map(o => `${o.pos}: ${o.name}`).join(', ')}`),
+    leagueName: document.getElementById('league-title')?.textContent || 'ESPN Fantasy League',
+    myTeam: {
+      teamName: myTeam.teamName || 'My Team',
+      modelStarterTotal: myTeam.modelStarterTotal || 0,
+      espnStarterTotal: myTeam.espnStarterTotal || 0,
+      starters: (myTeam.starters || []).map(formatPlayer),
+      bench: (myTeam.bench || []).map(formatPlayer),
     },
-    topWaivers: (state.waiverData?.freeAgents || []).slice(0, 5).map(w => `${w.pos} ${w.name} (+${w.delta || 0} Δ)`),
+    opponentTeam: {
+      teamName: oppTeam.teamName || 'Opponent Team',
+      modelStarterTotal: oppTeam.modelStarterTotal || 0,
+      espnStarterTotal: oppTeam.espnStarterTotal || 0,
+      starters: (oppTeam.starters || []).map(formatPlayer),
+    },
+    topWaiverTargets: (state.waiverData?.starterUpgrades || [])
+      .concat(state.waiverData?.benchUpgrades || [])
+      .concat((state.waiverData?.waiverRadar || []).map(r => ({ fa: r, edge: r.delta })))
+      .slice(0, 8)
+      .map(u => ({
+        player: u.fa?.name,
+        pos: u.fa?.pos,
+        nflTeam: u.fa?.nflTeam,
+        modelProj: u.fa?.ourProj,
+        deltaVsEspn: u.fa?.delta || u.edge,
+        replacesPlayer: u.current?.name,
+        reason: u.reason || '',
+      })),
   };
 
   try {
