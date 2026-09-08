@@ -51,7 +51,9 @@ async function callGemini({ apiKey, model = DEFAULT_MODEL, contents, systemInstr
     if (res.status === 401 || res.status === 403) {
       throw new Error(`Gemini Authentication Failed: ${errorDetail}. Please check your API key from Google AI Studio.`);
     } else if (res.status === 429) {
-      throw new Error(`Gemini Free Tier Rate Limit reached. Please wait a minute and retry.`);
+      const retryMatch = errorDetail.match(/retry in ([0-9.]+)s/i);
+      const waitHint = retryMatch ? ` Please retry in ${Math.ceil(parseFloat(retryMatch[1]))}s.` : ' Please wait a moment before retrying.';
+      throw new Error(`Gemini Free Tier Quota/Rate Limit reached for ${activeModel}.${waitHint} (Tip: You can select gemini-3.6-flash or gemini-3.5-flash-lite in the dropdown).`);
     } else if (res.status === 404) {
       throw new Error(`Gemini model "${activeModel}" not found. Error: ${errorDetail}`);
     } else {
@@ -148,17 +150,25 @@ async function testGeminiKey(apiKey, model = DEFAULT_MODEL) {
     });
     return { ok: true, model: activeModel, preview: text.trim() };
   } catch (err) {
-    // If deprecated or not found, try to query listAvailableModels for suggestions
-    const models = await listAvailableModels(cleanKey);
-    const flashModels = models.filter((m) => m.id.toLowerCase().includes('flash'));
-    const suggestions = (flashModels.length ? flashModels : models).slice(0, 5).map((m) => m.id).join(', ');
+    // Only query suggestions if model is not found / deprecated / invalid
+    const isModelNotFound =
+      err.message.includes('not found') ||
+      err.message.includes('no longer available') ||
+      err.message.includes('deprecated') ||
+      err.message.includes('404');
 
-    if (suggestions) {
-      return {
-        ok: false,
-        error: `${err.message}. Recommended modern models: ${suggestions}`,
-        availableModels: models,
-      };
+    if (isModelNotFound) {
+      const models = await listAvailableModels(cleanKey);
+      const flashModels = models.filter((m) => m.id.toLowerCase().includes('flash'));
+      const suggestions = (flashModels.length ? flashModels : models).slice(0, 5).map((m) => m.id).join(', ');
+
+      if (suggestions) {
+        return {
+          ok: false,
+          error: `${err.message}. Recommended active models: ${suggestions}`,
+          availableModels: models,
+        };
+      }
     }
     return { ok: false, error: err.message };
   }
