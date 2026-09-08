@@ -3,7 +3,7 @@
  * Communicates with Google Generative Language API (Gemini).
  */
 
-const DEFAULT_MODEL = 'gemini-1.5-flash';
+const DEFAULT_MODEL = 'gemini-3.5-flash';
 
 /**
  * Make a request to the Gemini generateContent REST endpoint.
@@ -66,6 +66,29 @@ async function callGemini({ apiKey, model = DEFAULT_MODEL, contents, systemInstr
 }
 
 /**
+ * Query Google Generative Language API for models accessible with this API key.
+ */
+async function listAvailableModels(apiKey) {
+  if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim()) return [];
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey.trim())}`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.models || [])
+      .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
+      .map((m) => ({
+        id: m.name.replace(/^models\//, ''),
+        displayName: m.displayName || m.name.replace(/^models\//, ''),
+        description: m.description || '',
+      }))
+      .filter((m) => !m.id.includes('deprecated') && !m.id.includes('legacy') && !m.id.includes('1.5'));
+  } catch (_) {
+    return [];
+  }
+}
+
+/**
  * Validate an API key by making a lightweight test ping.
  */
 async function testGeminiKey(apiKey, model = DEFAULT_MODEL) {
@@ -73,16 +96,31 @@ async function testGeminiKey(apiKey, model = DEFAULT_MODEL) {
     return { ok: false, error: 'API key is required.' };
   }
 
+  const cleanKey = apiKey.trim();
+  let activeModel = model || DEFAULT_MODEL;
+
   try {
     const text = await callGemini({
-      apiKey: apiKey.trim(),
-      model,
+      apiKey: cleanKey,
+      model: activeModel,
       contents: [{ role: 'user', parts: [{ text: 'Respond with the single word: "READY"' }] }],
       maxTokens: 10,
       temperature: 0.1,
     });
-    return { ok: true, model, preview: text.trim() };
+    return { ok: true, model: activeModel, preview: text.trim() };
   } catch (err) {
+    // If deprecated or not found, try to query listAvailableModels for suggestions
+    const models = await listAvailableModels(cleanKey);
+    const flashModels = models.filter((m) => m.id.toLowerCase().includes('flash'));
+    const suggestions = (flashModels.length ? flashModels : models).slice(0, 5).map((m) => m.id).join(', ');
+
+    if (suggestions) {
+      return {
+        ok: false,
+        error: `${err.message}. Recommended modern models: ${suggestions}`,
+        availableModels: models,
+      };
+    }
     return { ok: false, error: err.message };
   }
 }
@@ -184,5 +222,6 @@ module.exports = {
   testGeminiKey,
   explainPlayerProjection,
   askScoutChat,
+  listAvailableModels,
   DEFAULT_MODEL,
 };

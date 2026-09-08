@@ -2035,7 +2035,7 @@
           </label>
           <a href="#" onclick="toggleAiKeyVisibility(event)" id="ai-key-toggle-link" style="font-size:0.72rem; color:var(--accent-cyan); text-decoration:none;">Show Key</a>
         </div>
-        <input id="cfg-gemini-key" type="password" placeholder="AIzaSy... (paste your key here)" required style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.6rem 0.75rem; color:#fff; font-size:0.85rem; font-family:monospace; outline:none;">
+        <input id="cfg-gemini-key" type="password" placeholder="AIzaSy... (paste your key here)" required style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.6rem 0.75rem; color:#fff; font-size:0.85rem; font-family:monospace; outline:none;" oninput="onAiKeyInput()">
         <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.25rem;">Free key from Google AI Studio. Stored securely in your config.</div>
       </div>
 
@@ -2044,9 +2044,10 @@
           Model Selection
         </label>
         <select id="cfg-gemini-model" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.6rem 0.75rem; color:#fff; font-size:0.85rem; outline:none;">
-          <option value="gemini-1.5-flash">gemini-1.5-flash (Recommended: Free, sub-second latency)</option>
-          <option value="gemini-2.0-flash">gemini-2.0-flash (High speed)</option>
-          <option value="gemini-1.5-pro">gemini-1.5-pro (In-depth reasoning)</option>
+          <option value="gemini-3.5-flash">gemini-3.5-flash (Recommended: Free Tier, Fast)</option>
+          <option value="gemini-3.8-flash">gemini-3.8-flash (Latest Generation High Speed)</option>
+          <option value="gemini-2.5-flash">gemini-2.5-flash (Fast Tier)</option>
+          <option value="gemini-3.5-pro">gemini-3.5-pro (In-depth Complex Reasoning)</option>
         </select>
       </div>
 
@@ -3417,6 +3418,36 @@ async function checkAiStatus() {
   }
 }
 
+let aiKeyDebounce = null;
+function onAiKeyInput() {
+  clearTimeout(aiKeyDebounce);
+  aiKeyDebounce = setTimeout(() => {
+    const key = (document.getElementById('cfg-gemini-key').value || '').trim();
+    if (key.length >= 20) {
+      loadAiModels(key);
+    }
+  }, 400);
+}
+
+async function loadAiModels(key) {
+  try {
+    const url = key ? `/api/ai/models?key=${encodeURIComponent(key)}` : '/api/ai/models';
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const models = await res.json();
+    if (!Array.isArray(models) || models.length === 0) return;
+
+    const select = document.getElementById('cfg-gemini-model');
+    if (!select) return;
+    const currentVal = select.value || (state.aiStatus?.model) || 'gemini-3.5-flash';
+
+    select.innerHTML = models.map(m => {
+      const selected = m.id === currentVal ? 'selected' : '';
+      return `<option value="${escapeHtml(m.id)}" ${selected}>${escapeHtml(m.displayName || m.id)}</option>`;
+    }).join('');
+  } catch (_) {}
+}
+
 function openAiModal() {
   const m = document.getElementById('ai-modal');
   if (!m) return;
@@ -3431,6 +3462,7 @@ function openAiModal() {
       document.getElementById('cfg-gemini-model').value = s.model;
     }
   }
+  loadAiModels();
 }
 
 function closeAiModal() {
@@ -3464,7 +3496,7 @@ async function onSaveAiConfig(e) {
   const saveBtn = document.getElementById('btn-save-ai');
 
   const rawKey = keyInput.value.trim();
-  const model = modelSelect ? modelSelect.value : 'gemini-1.5-flash';
+  const model = modelSelect ? modelSelect.value : 'gemini-3.5-flash';
 
   if (!rawKey) {
     showToast('Please enter your Gemini API Key.');

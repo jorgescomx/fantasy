@@ -4,7 +4,7 @@ const path = require('path');
 const { projectPlayer } = require('./projectionEngine');
 const { fetchKalshiNFLMarkets } = require('./kalshiService');
 const { analyzeWeekPerformance } = require('./learningEngine');
-const { testGeminiKey, explainPlayerProjection, askScoutChat, DEFAULT_MODEL } = require('./aiService');
+const { testGeminiKey, explainPlayerProjection, askScoutChat, listAvailableModels, DEFAULT_MODEL } = require('./aiService');
 
 const app = express();
 const PORT = 4477;
@@ -439,6 +439,24 @@ app.post('/api/config', async (req, res) => {
 });
 
 // --- Google Gemini AI Scout Endpoints ---
+app.get('/api/ai/models', async (req, res) => {
+  try {
+    const key = req.query.key || config.geminiApiKey || process.env.GEMINI_API_KEY || '';
+    const models = await listAvailableModels(key);
+    if (!models || models.length === 0) {
+      return res.json([
+        { id: 'gemini-3.5-flash', displayName: 'gemini-3.5-flash (Fast, Recommended Free Tier)' },
+        { id: 'gemini-3.8-flash', displayName: 'gemini-3.8-flash (Latest Flash Generation)' },
+        { id: 'gemini-2.5-flash', displayName: 'gemini-2.5-flash (Standard Fast Tier)' },
+        { id: 'gemini-3.5-pro', displayName: 'gemini-3.5-pro (In-depth Reasoning)' },
+      ]);
+    }
+    res.json(models);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/ai/status', (req, res) => {
   const apiKey = config.geminiApiKey || process.env.GEMINI_API_KEY || '';
   const isConfigured = !!(apiKey && apiKey.trim());
