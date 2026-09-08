@@ -20,6 +20,10 @@ An advanced, algorithmic Fantasy Football projection workbench and analytics eng
 - **Post-Week Learning & Backtesting Engine**:
   - Compares projected vs. actual performance across weeks.
   - Generates recommended factor calibration adjustments to improve future accuracy.
+- **Google Gemini AI Scout & Bench Coach (Free Tier)**:
+  - In-app AI configuration popup to connect your free Google AI Studio key (`AIzaSy...`) in 30 seconds.
+  - On-demand player scouting intelligence reports explaining model deltas, Kalshi signals, and start/sit verdicts.
+  - Interactive "Ask AI Scout" chat drawer for real-time matchup strategy, roster advice, and waiver recommendations.
 - **In-App League Connection Wizard**:
   - Seamlessly input and validate your ESPN League ID, Season, `SWID`, and `espn_s2` directly inside the web UI without manual file editing.
 - **Docker Ready**:
