@@ -3,7 +3,7 @@
  * Communicates with Google Generative Language API (Gemini).
  */
 
-const DEFAULT_MODEL = 'gemini-3.5-flash';
+const DEFAULT_MODEL = 'gemini-3.6-flash';
 
 /**
  * Make a request to the Gemini generateContent REST endpoint.
@@ -30,55 +30,72 @@ async function callGemini({ apiKey, model = DEFAULT_MODEL, contents, systemInstr
     };
   }
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': apiKey.trim(),
-    },
-    body: JSON.stringify(body),
-  });
+  const MAX_RETRIES = 2;
+  let lastErrorDetail = '';
+  let lastStatus = 0;
 
-  if (!res.ok) {
-    let errorDetail = '';
-    try {
-      const errJson = await res.json();
-      errorDetail = errJson.error?.message || JSON.stringify(errJson);
-    } catch (_) {
-      errorDetail = `HTTP ${res.status} ${res.statusText}`;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, 1200 * attempt));
     }
 
-    if (res.status === 401 || res.status === 403) {
-      throw new Error(`Gemini Authentication Failed: ${errorDetail}. Please check your API key from Google AI Studio.`);
-    } else if (res.status === 429) {
-      const retryMatch = errorDetail.match(/retry in ([0-9.]+)s/i);
-      const waitHint = retryMatch ? ` Please retry in ${Math.ceil(parseFloat(retryMatch[1]))}s.` : ' Please wait a moment before retrying.';
-      throw new Error(`Gemini Free Tier Quota/Rate Limit reached for ${activeModel}.${waitHint} (Tip: You can select gemini-3.6-flash or gemini-3.5-flash-lite in the dropdown).`);
-    } else if (res.status === 404) {
-      throw new Error(`Gemini model "${activeModel}" not found. Error: ${errorDetail}`);
-    } else {
-      throw new Error(`Gemini API error (${res.status}): ${errorDetail}`);
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey.trim(),
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      lastStatus = res.status;
+      try {
+        const errJson = await res.json();
+        lastErrorDetail = errJson.error?.message || JSON.stringify(errJson);
+      } catch (_) {
+        lastErrorDetail = `HTTP ${res.status} ${res.statusText}`;
+      }
+
+      // Retry on transient 503 (high demand) or 500
+      if ((res.status === 503 || res.status === 500) && attempt < MAX_RETRIES) {
+        continue;
+      }
+
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(`Gemini Authentication Failed: ${lastErrorDetail}. Please check your API key from Google AI Studio.`);
+      } else if (res.status === 429) {
+        const retryMatch = lastErrorDetail.match(/retry in ([0-9.]+)s/i);
+        const waitHint = retryMatch ? ` Please retry in ${Math.ceil(parseFloat(retryMatch[1]))}s.` : ' Please wait a moment before retrying.';
+        throw new Error(`Gemini Free Tier Quota/Rate Limit reached for ${activeModel}.${waitHint} (Tip: You can select gemini-3.6-flash or gemini-3.5-flash-lite in the dropdown).`);
+      } else if (res.status === 404) {
+        throw new Error(`Gemini model "${activeModel}" not found. Error: ${lastErrorDetail}`);
+      } else {
+        throw new Error(`Gemini API error (${res.status}): ${lastErrorDetail}`);
+      }
     }
-  }
 
-  const data = await res.json();
-  const candidate = data.candidates?.[0];
-  if (!candidate || !candidate.content?.parts?.length) {
-    if (candidate?.finishReason === 'MAX_TOKENS') {
-      throw new Error('Gemini exceeded token limit during its thinking phase. Please try again.');
+    const data = await res.json();
+    const candidate = data.candidates?.[0];
+    if (!candidate || !candidate.content?.parts?.length) {
+      if (candidate?.finishReason === 'MAX_TOKENS') {
+        throw new Error('Gemini exceeded token limit during its thinking phase. Please try again.');
+      }
+      throw new Error('Gemini returned an empty response. Please try again.');
     }
-    throw new Error('Gemini returned an empty response. Please try again.');
+
+    const textParts = (candidate.content.parts || [])
+      .map((p) => p.text)
+      .filter((t) => typeof t === 'string' && t.trim().length > 0);
+
+    if (!textParts.length) {
+      throw new Error('Gemini returned an empty response. Please try again.');
+    }
+
+    return textParts.join('\n');
   }
 
-  const textParts = (candidate.content.parts || [])
-    .map((p) => p.text)
-    .filter((t) => typeof t === 'string' && t.trim().length > 0);
-
-  if (!textParts.length) {
-    throw new Error('Gemini returned an empty response. Please try again.');
-  }
-
-  return textParts.join('\n');
+  throw new Error(`Gemini API error (${lastStatus}): ${lastErrorDetail}`);
 }
 
 /**

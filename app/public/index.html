@@ -2047,9 +2047,9 @@
           Model Selection
         </label>
         <select id="cfg-gemini-model" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.6rem 0.75rem; color:#fff; font-size:0.85rem; outline:none;">
-          <option value="gemini-3.5-flash">gemini-3.5-flash (Recommended: Free Tier, Fast)</option>
-          <option value="gemini-3.6-flash">gemini-3.6-flash (Fast & Advanced)</option>
+          <option value="gemini-3.6-flash" selected>gemini-3.6-flash (Recommended: Free Tier, Fast & Reliable)</option>
           <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Ultra Fast, High Quota)</option>
+          <option value="gemini-3.5-flash">gemini-3.5-flash (Standard Tier)</option>
           <option value="gemini-3.7-flash">gemini-3.7-flash (High Performance)</option>
           <option value="gemini-3.8-flash">gemini-3.8-flash (Latest Generation)</option>
           <option value="gemini-flash-latest">gemini-flash-latest (Auto-updating Flash)</option>
@@ -3450,7 +3450,7 @@ async function loadAiModels(key) {
 
     const select = document.getElementById('cfg-gemini-model');
     if (!select) return;
-    const currentVal = select.value || (state.aiStatus?.model) || 'gemini-3.5-flash';
+    const currentVal = select.value || (state.aiStatus?.model) || 'gemini-3.6-flash';
 
     select.innerHTML = models.map(m => {
       const selected = m.id === currentVal ? 'selected' : '';
@@ -3519,7 +3519,7 @@ async function onSaveAiConfig(e) {
   }
 
   const rawKey = keyInput.value.trim();
-  const model = modelSelect ? modelSelect.value : 'gemini-3.5-flash';
+  const model = modelSelect ? modelSelect.value : 'gemini-3.6-flash';
 
   if (!rawKey) {
     showToast('Please enter your Gemini API Key.');
